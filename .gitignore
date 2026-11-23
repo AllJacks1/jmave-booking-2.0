@@ -34,4 +34,5 @@ Thumbs.db
 .idea/
 
 # railway
-.railway/
+.railway/*
+!.railway/railway.ts
