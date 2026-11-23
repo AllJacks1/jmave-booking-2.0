@@ -106,7 +106,7 @@ migration/source/       the two .xlsx files (gitignored)
 
 | Table | Phase | Key columns |
 |---|---|---|
-| Better Auth tables (`user`, `session`, `account`, `verification`) | 1a | `user.role`, `user.active`, `user.display_name`, `user.rework_owner_id` |
+| Better Auth tables (`user`, `session`, `account`, `verification`, `rate_limit`) | 1a | `user.role`, `user.active`, `user.display_name`, `user.rework_owner_id`, `user.must_change_password` |
 | `audit_log` | 1a | actor_id, action, entity, entity_id, before jsonb, after jsonb, at |
 | `settings` | 1a | key (pk), value jsonb. Business name/address/phones/email, default fuel prices, quote validity hours (24), turnaround buffer minutes (60), Rework toggles |
 | `vehicles` | 1b | display_name, plate (unique), make, model, year, color, transmission, chassis_no, engine_no, engine, body_type enum (`compact, sedan, wagon, mpv, suv, pickup, van`), fuel_type (`gasoline, premium, diesel`), tank_capacity_l, ownership (`owned, operator, hired`), operator_name, daily_rate_display, active, sort_order |
@@ -215,6 +215,15 @@ External calls (Rework, email) never run inside a user request. The request writ
 | 2026-11-23 | Own calendar; no Google Calendar sync. |
 | 2026-11-23 | Shift roster is part of the system. |
 | 2026-11-23 | Rework token is sent as the `token` URL parameter; lives only in `REWORK_WEBHOOK_TOKEN`. |
+| 2026-11-23 | Next.js 16: `cacheComponents` off (every staff page depends on the signed-in user); auth gate lives in `src/proxy.ts` (Next 16's name for middleware). |
+| 2026-11-23 | shadcn `form` no longer exists in the registry: forms use shadcn `field` + react-hook-form `Controller` + zod (`src/components/form-fields.tsx`). |
+| 2026-11-23 | Server actions return `ActionResult` with an HTTP-like `status` (403 forbidden, 401 signed out, 400 invalid, 404, 409 conflict). Actions are built as `run(actor, input)` via `defineAction` so tests call the same path per role. Route handlers return real HTTP statuses. |
+| 2026-11-23 | Settings stored per key: `business`, `fuel_prices_centavos` (per litre), `quote_validity_hours`, `turnaround_buffer_minutes`. Defaults in `src/lib/settings/schema.ts`, written on first-run setup. Business phones stored E.164. |
+| 2026-11-23 | Nobody can deactivate their own account. The last active Super Admin check locks Super Admin rows (`FOR UPDATE`). Deactivate and password reset revoke the user's sessions. |
+| 2026-11-23 | Better Auth rate limits stored in Postgres (`rate_limit`): sign-in and change-password 10/min per IP. |
+| 2026-11-23 | Railway: Config as Code (`railway.json`) is deprecated (ends 2026-12-01). Service config (build `pnpm build`, start `pnpm start`, pre-deploy `pnpm db:migrate`, health check `/api/health`) is set on the `web` service; `.railway/railway.ts` mirrors it. `railway config plan/apply` currently fails on Windows (SDK version check), so the settings were applied with the Railway API. Keep `.railway/railway.ts` in step by hand: when a deploy setting changes on Railway, make the same change in the file, and vice versa. |
+| 2026-11-23 | Railway region: Singapore (`asia-southeast1-eqsg3a`) for both `web` and `Postgres` (moved from US East while the DB was empty), closest to Davao. |
+| 2026-11-23 | Test databases must be named `*_test` / `*_e2e`; the reset helper refuses anything else. |
 
 ## 8. Open questions (build with the default; confirm with the owner when possible)
 
@@ -245,3 +254,26 @@ Append one entry per session. Newest last.
 - Decisions made (also added to §7):
 - Deployed: yes/no (URL)
 -->
+
+### 2026-11-23 — Phase 1a — Foundation
+- Built:
+  - Next.js 16.4 (App Router, TS strict), Tailwind 4, shadcn/ui (radix-nova), lucide-react, Geist via `next/font`. Scripts: dev, build, start, lint, typecheck, test, e2e, db:generate, db:migrate, db:studio.
+  - Drizzle + `postgres` driver; migration `0000_init` (Better Auth tables incl. `rate_limit`, `settings`, `audit_log`). UUID ids everywhere.
+  - Better Auth: email + password, sign-up disabled and the endpoint returns 404, DB-backed rate limiting, inactive users blocked at session creation, `must_change_password` forces `/change-password`. `src/proxy.ts` sends signed-out users to `/login`.
+  - `/setup` per §6.4: constant-time token check, advisory lock + re-check in one transaction, seeds default settings, audit row, 404 once any user exists. Login shows "System not set up" while no users exist.
+  - `src/lib/permissions.ts`: full §2 table (30 actions, all phases), `can()` + `requirePermission()`, admin limited to managing Sales/Operations.
+  - App shell: collapsible sidebar (sheet on mobile) filtered by role, top bar with user menu (profile, change password, sign out) and light/dark toggle. Placeholder pages show "Coming in Phase N" to roles that will have access; others see "No access". Operations lands on `/board`, others on `/dashboard`.
+  - `/users`: list, create (temporary password shown once), edit name/display name/role, deactivate/reactivate, reset password. Last active Super Admin protected.
+  - `/settings`: business details, fuel prices, quote validity, turnaround buffer. Super Admin edits, Admin read-only. Each changed key writes an `audit_log` row with before/after.
+  - `withAudit()` helper (secrets redacted), `GET /api/health`, `.env.example`, `scripts/setup-local.ps1` (local DBs + `.env.local`).
+  - Tests: Vitest unit (permissions matrix, nav by role, phone, money) + integration against a throwaway DB (forbidden action per role, users rules, settings audit, setup token and race). Playwright: fresh system → setup (wrong/right token, then 404) → sign-up 404 → create Sales → Sales forced password change → no Users/Settings menu, `/users` shows No access → settings save.
+- Results: `pnpm lint` clean, `pnpm typecheck` clean, `pnpm test` 220/220, `pnpm e2e` 5/5.
+- Deployed: yes — Railway project `jmave-booking` (services `web`, `Postgres`, region Singapore `asia-southeast1-eqsg3a`), https://web-production-b67727a7.up.railway.app. `/api/health` → `{ ok: true }`; pre-deploy migrations ran (tables exist, `/setup` serves, login shows "System not set up").
+- Not done / deferred:
+  - First Super Admin on production not created yet: the owner opens `/setup` with `SETUP_TOKEN` from Railway Variables.
+  - No GitHub remote; deploys are `railway up` from a local checkout.
+  - Custom domain (Phase 4).
+- Known issues:
+  - `railway config plan/apply` fails on Windows ("requires Railway CLI 5.42.1 or newer") because the `railway/iac` SDK finds the CLI through `$_`. Service settings were set through the Railway API instead; keep `.railway/railway.ts` in step by hand.
+  - Global npm installs from inside the Claude desktop app go to its virtualised AppData; install CLIs from your own terminal.
+- Decisions made (also added to §7): Cache Components off + `proxy.ts`; shadcn `field` instead of `form`; `ActionResult` statuses for server actions; settings keys; self-deactivation blocked and sessions revoked; DB rate limits; Railway config via service settings; Railway region Singapore; test DB naming guard.
