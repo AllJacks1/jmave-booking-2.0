@@ -47,3 +47,26 @@ export function formatPhPhone(e164: string): string {
   }
   return `0${n}`;
 }
+
+/**
+ * Phone from a spreadsheet cell: numbers (`9.171234567E9`), text with a
+ * trailing `.0`, or several numbers separated by `/`, `,`, `;` or " or ".
+ * Returns every plausible PH number found, normalised, first one first.
+ */
+export function phonesFromCell(value: unknown): string[] {
+  if (value === null || value === undefined) return [];
+  let text: string;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return [];
+    text = value.toFixed(0);
+  } else {
+    text = String(value).trim().replace(/\.0+$/, "");
+  }
+  const parts = text.split(/\s*(?:\/|,|;|\bor\b|&|\n)\s*/i).filter(Boolean);
+  const out: string[] = [];
+  for (const part of parts) {
+    const e164 = normalisePhPhone(part);
+    if (e164 && !out.includes(e164)) out.push(e164);
+  }
+  return out;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centavosToInput, formatPeso, parsePesoToCentavos } from "./money";
+import { centavosFromCell, centavosToInput, formatPeso, parsePesoToCentavos } from "./money";
 
 describe("money", () => {
   it.each([
@@ -24,4 +24,20 @@ describe("money", () => {
   );
 
   it("centavosToInput", () => expect(centavosToInput(158050)).toBe("1580.50"));
+});
+
+describe("centavosFromCell", () => {
+  it.each([
+    [1580, 158000],
+    [1347.5, 134750],
+    [126.35, 12635],
+    ["₱1,580.00", 158000],
+    ["PHP 2,000", 200000],
+    ["  94 ", 9400],
+    ["", null],
+    ["None", null],
+    [null, null],
+  ] as const)("%j → %j", (input, expected) => {
+    expect(centavosFromCell(input)).toBe(expected);
+  });
 });
