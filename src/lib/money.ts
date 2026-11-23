@@ -27,3 +27,15 @@ export function parsePesoToCentavos(input: string | number): number | null {
 export function centavosToInput(centavos: number): string {
   return (centavos / 100).toFixed(2);
 }
+
+/**
+ * Money from a spreadsheet cell: numbers or text like `₱1,580.00`.
+ * Returns null for blanks and non-numbers. Rounds to the centavo.
+ */
+export function centavosFromCell(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? Math.round(value * 100) : null;
+  const s = String(value).replace(/[₱,\s]|PHP|Php/g, "");
+  if (!s || !/^-?\d+(\.\d+)?$/.test(s)) return null;
+  return Math.round(Number(s) * 100);
+}

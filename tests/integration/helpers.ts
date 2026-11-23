@@ -7,7 +7,7 @@ import { insertUserWithPassword } from "@/lib/users/service";
 /** Wipe app data between tests (keeps the schema). */
 export async function truncateAll() {
   await db.execute(
-    sql`truncate table "audit_log", "settings", "session", "account", "verification", "rate_limit", "user" restart identity cascade`,
+    sql`truncate table "import_runs", "clients", "vehicles", "rate_cards", "holidays", "number_sequences", "audit_log", "settings", "session", "account", "verification", "rate_limit", "user" restart identity cascade`,
   );
 }
 

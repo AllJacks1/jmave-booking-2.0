@@ -36,3 +36,5 @@ Thumbs.db
 # railway
 .railway/*
 !.railway/railway.ts
+scripts/.scratch/
+.claude/launch.json
