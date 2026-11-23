@@ -1,0 +1,251 @@
+C1		|| Make:
+D1		|| Model:
+E1		|| Year:
+F1		|| Color:
+G1		|| Plate Number:
+H1		|| Transmission:
+I1		|| Chassis No.:
+J1		|| Engine No.:
+K1		|| Engine
+L1		|| Body Type:
+M1		|| Fuel:
+N1		|| Fuel tank Capacity
+A2		|| Vios Red AT NHS 5905
+C2		|| TOYOTA
+D2		|| Vios 1.3 XLE CVT
+E2		|| 2025.0
+F2		|| Super Red V
+G2		|| NHS 5905
+H2		|| Automatic
+I2		|| PA1B18F35R4264945
+J2		|| 1NRY291437
+K2		|| 1.3
+L2		|| Sedan
+M2		|| Unleaded
+N2		||  42 Liters
+A3		|| Almera Blue AT
+C3		|| NISSAN
+D3		|| Almera 1.5-L E
+E3		|| 2021.0
+F3		|| Saphire Metallic Blue
+H3		|| Automatic
+K3		|| 1.5
+L3		|| Sedan
+M3		|| Unleaded
+N3		|| 41 Liters
+A4		|| Almera Gray LAD 2386
+C4		|| NISSAN
+D4		|| Almera 1.5-L E
+E4		|| 2018.0
+F4		|| Titanium Gray
+G4		|| LAD 2386
+H4		|| Automatic
+I4		|| BDUALBAN17C14477
+J4		|| HR15*955883D
+K4		|| 1.5
+L4		|| Sedan
+M4		|| Unleaded
+N4		|| 41 Liters
+A5		|| MG5 Black AT LAO 1451
+C5		|| MG
+D5		|| MG5 1.5L CVT
+E5		|| 2024.0
+F5		|| Black
+G5		|| LAO 1451
+H5		|| Automatic
+I5		|| LSJA36E3XRZ097958
+J5		|| 15S4C1GGPA310897
+K5		|| 1.5
+L5		|| Sedan
+M5		|| Premium
+N5		|| 45 Liters
+A6		|| MG5 White AT LAQ 6889
+C6		|| MG
+D6		|| MG5 1.5L CVT
+E6		|| 2025.0
+F6		|| White
+G6		|| LAQ 6889
+H6		|| Automatic
+K6		|| 1.5
+L6		|| Sedan
+M6		|| Premium
+N6		|| 45 Liters
+A7		|| MGzs Red AT LAO 1066
+C7		|| MG
+D7		|| MG zs 1.5L
+E7		|| 2023.0
+F7		|| Red
+G7		|| LAO 1066
+H7		|| Automatic
+I7		|| LSJW74U39PZ296271
+J7		|| LSJW74U39PZ296271
+K7		|| 1.5
+L7		|| WAGON
+M7		|| Premium
+N7		|| 48 Liters
+A8		|| Xpander Black AT
+C8		|| MITSUBISHI
+D8		|| Xpander GLS Sport
+E8		|| 2019.0
+F8		|| Jet Black Meca
+H8		|| Automatic
+I8		|| MK2XRNC1WKN042010
+J8		|| 4A91T2876
+K8		|| 1.5
+L8		|| MPV
+M8		|| Unleaded
+N8		|| 45 Liters
+A9		|| Fortuner AT NEU 3215
+C9		|| TOYOTA
+D9		|| FORTUNER
+E9		|| 2020.0
+F9		|| White
+G9		|| NEU 3215
+H9		|| Automatic
+I9		|| MFHJB8GS9K1575929
+J9		|| 2GDC6630935
+K9		|| 2.8
+L9		|| SUV
+M9		|| Diesel
+N9		|| 80 Liters
+A10		|| Trail Blazer AT ZAB 9002
+C10		|| CHEVROLET
+D10		|| Trail Blazer
+E10		|| 2017.0
+F10		|| Black
+G10		|| ZAB 9002
+H10		|| Automatic
+L10		|| SUV
+M10		|| Diesel
+N10		|| 76 Liters
+A11		|| Montero White AT ZAA 6410 
+C11		|| MITSUBISHI
+D11		|| Montero Sport GLS
+E11		|| 2017.0
+F11		|| Savanna White
+G11		|| ZAA 6410
+H11		|| Automatic
+I11		|| MMBGUKR10HH031982
+J11		|| 4N15UCB4464
+K11		|| 2.4
+L11		|| SUV
+M11		|| Diesel
+N11		|| 68 Liters
+A12		|| Wigo Black AT
+C12		|| TOYOTA
+D12		|| Wigo 1.0 G
+E12		|| 2019.0
+F12		|| Black
+G12		|| KAC 8079
+H12		|| Automatic
+I12		|| MHKA4DG5FKJ030402
+J12		|| 1KRA504883
+K12		|| 1.0
+L12		|| Compact
+M12		|| Unleaded
+N12		|| 36 Liters
+A13		|| Van Grandia AT
+C13		|| TOYOTA
+D13		|| Hiace Comm MT
+E13		|| 2020.0
+F13		|| White
+G13		|| NDM 7700
+H13		|| Manual
+I13		|| JTFNAFAP0KB010220
+J13		|| 1GD8488869
+K13		|| 3.0
+L13		|| Van
+M13		|| Diesel
+N13		|| 70 Liters
+A14		|| Xpander - NJQ 6651
+C14		|| Mitsubishi
+D14		|| Xpander
+E14		|| 2025.0
+F14		|| Red
+G14		|| NJQ 6651
+H14		|| AT
+I14		|| MK2LRNC1WSN022861
+J14		|| 4A91KCS3791
+K14		|| 1.5
+L14		|| MPV
+M14		|| Unleaded
+N14		|| 45 Liters
+A15		|| Wigo  - GBG 7497
+C15		|| Toyota
+D15		|| Wigo
+E15		|| 2023.0
+F15		|| Silver Metallic
+G15		|| GBG 7497
+H15		|| CVT
+I15		|| MHKAA1BC5PJ001184
+J15		|| 1KRA804876
+K15		|| 1.0
+L15		|| Compact
+M15		|| Unleaded
+N15		|| 36 liters
+A16		|| Innova - LAS 1308
+C16		|| Toyota
+D16		|| Innova
+E16		|| 2026.0
+F16		|| Red Mica Metallic
+G16		|| LAS 1308
+H16		|| AT
+I16		|| PA2JA8EM550163508
+J16		|| 1GD5853983
+K16		|| 2.8
+L16		|| MPV
+M16		|| Diesel
+N16		|| 55 Liters
+A17		|| Vios Silver - LAS 2163
+C17		|| Toyota
+D17		|| Vios
+E17		|| 2026.0
+F17		|| Silver
+G17		|| LAS 2163
+H17		|| AT
+I17		|| PA1B18F3XS4298160
+J17		|| 1NRY491538
+K17		|| 1.3
+L17		|| SEDAN
+M17		|| Unleaded
+N17		|| 42 Liters
+A18		|| Vios Black - DBP 1235
+C18		|| Toyota
+D18		|| Vios
+E18		|| 2024.0
+F18		|| Black
+G18		|| DBP 1235
+H18		|| CVT
+I18		|| PA1B18F37R4260380
+J18		|| 1NRY268459
+K18		|| 1.3
+L18		|| SEDAN
+M18		|| Unleaded
+N18		|| 42 Liters
+A19		|| Dzire Blue AT - NLC 3673
+C19		|| Suzuki
+D19		|| Dzire GLX Hybrid
+E19		|| 2026.0
+F19		|| Blue
+G19		|| NLC 3673
+H19		|| CVT
+I19		|| MA3ZFEFS3TA240523
+J19		|| Z12ENF139528
+K19		|| 1.2
+L19		|| SEDAN
+M19		|| Unleaded
+N19		|| 37 Liters
+A27	='SELF DRIVE COMPUTATION AND ITEN'!L6	|| Montero White AT ZAA 6410 
+B27	=_xlfn.XLOOKUP(A27,A2:A25,B2:B25)	|| None
+C27	=vlookup($A$27,$A$2:$CB$25,3,0)	|| MITSUBISHI
+D27	=vlookup($A$27,$A$2:$CB$25,4,0)	|| Montero Sport GLS
+E27	=vlookup($A$27,$A$2:$CB$25,5,0)	|| 2017
+F27	=vlookup($A$27,$A$2:$CB$25,6,0)	|| Savanna White
+G27	=vlookup($A$27,$A$2:$CB$25,7,0)	|| ZAA 6410
+H27	=vlookup($A$27,$A$2:$CB$25,8,0)	|| Automatic
+I27	=vlookup($A$27,$A$2:$CB$25,9,0)	|| MMBGUKR10HH031982
+J27	=vlookup($A$27,$A$2:$CB$25,10,0)	|| 4N15UCB4464
+K27	=vlookup($A$27,$A$2:$CB$25,11,0)	|| 2.4
+L27	=vlookup($A$27,$A$2:$CB$25,12,0)	|| SUV
+M27	=vlookup($A$27,$A$2:$CB$25,13,0)	|| Diesel
+N27	=vlookup($A$27,$A$2:$CB$25,14,0)	|| 68 Liters

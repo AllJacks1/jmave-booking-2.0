@@ -1,0 +1,138 @@
+A1		|| goo
+C1		|| SELF DRIVE COMPUTATION
+N2		|| Additional Hrs.
+P2		|| Extension
+Number of Hours
+C3		|| CAR
+E3		|| TIME
+G3		|| Car Category
+H3		|| 7 Days Discount
+J3		|| CDW
+S3		|| Beyond Operating Hrs
+U3		|| DISTANCE
+W3		|| FUEL
+PRICE
+C4		|| MPV
+E4		|| 24.0
+G4		|| Primo
+H4		|| No Discount
+J4		|| Without CDW
+M4		|| 1.0
+P4		|| 0.0
+W4		|| Gasoline
+J5		|| N/A
+U5		|| .
+W5		|| 94.0
+A6		|| HOME
+C6		|| Deposit
+G6		|| Cash
+J6		|| City Saver Promo
+L6		|| Montero White AT ZAA 6410 
+W6		|| Diesel
+C7		|| Reservation Fee
+W7		|| 110.0
+M8		|| SPECS
+S8	=SPECS!B27	|| None
+A9		|| SELF DRIVE COMPUTATION AND ITENERARY
+C9		|| Rental Charges
+E9		|| Amount
+G9		|| Remarks
+M9		|| Make:
+P9	=SPECS!C27	|| MITSUBISHI
+C10		|| Rental Rate
+E10	=IF(J5="City Saver",4799,IF(J5="City Saver Plus",5299,IF(J5="N/A",FORMULA!J83,"")))	|| 2630
+G10	="(" &FORMULA!J82 & " × " &FORMULA!J80 & ") = " & (FORMULA!J82 * FORMULA!J80)	|| (2630 × 1) = 2630
+M10		|| Model:
+P10	=SPECS!D27	|| Montero Sport GLS
+C11		|| Additional Hrs.
+E11	=if(N4="","",FORMULA!J81)	|| None
+G11	=if(N4="","","(" &FORMULA!J81 & " × " &1 & ") = " & (FORMULA!J81 * 1))	|| None
+M11		|| Year:
+P11	=SPECS!E27	|| 2017
+A12		|| INTERNAL SELF DRIVE
+C12		|| CDW
+E12	=FORMULA!J89	|| 0
+M12		|| Color:
+P12	=SPECS!F27	|| Savanna White
+C13		|| Carwash
+E13	=FORMULA!K74	|| 250
+M13		|| Plate Number:
+P13	=SPECS!G27	|| ZAA 6410
+A14		|| CLIENT COPY SELF DRIVE
+C14		|| Delivery Fee
+E14		|| 365.0
+M14		|| Transmission:
+P14	=SPECS!H27	|| Automatic
+C15		|| Pick-up Fee
+E15		|| 365.0
+M15		|| Chassis No.:
+P15	=SPECS!I27	|| MMBGUKR10HH031982
+C16		|| OT Premium
+A17		|| SELF DRIVEN RENTAL LOG
+C17		|| Beyond Operating Hours
+E17	=FORMULA!K79	|| 0
+G17	="(" &FORMULA!J79 & " × " &FORMULA!J80 & ") = " & (FORMULA!J79 * FORMULA!J80)	|| (0 × 1) = 0
+M17		|| Engine No.:
+P17	=SPECS!J27	|| 4N15UCB4464
+C18		|| Hourly Extension Rate
+E18	=FORMULA!K105	|| 0
+G18	="(" &FORMULA!K103 & " × " &FORMULA!K104 & ") = " & (FORMULA!K103 * FORMULA!K104)	|| (350 × 0) = 0
+M18		|| Engine
+P18	=SPECS!K27	|| 2.4
+A19		|| SELF DRIVEN RENTAL VIEWER
+M19		|| Body Type:
+P19	=SPECS!L27	|| SUV
+C20		|| Sub Total
+E20	=SUM(E10:E19)	|| 3610
+M20		|| Fuel:
+P20	=SPECS!M27	|| Diesel
+M21		|| Fuel Tank Capacity:
+P21	=SPECS!N27	|| 68 Liters
+A22		|| WITH DRIVER COMPUTATION
+C22		|| Promo Discount
+E22	=if(G22="No Discount","0.00",FORMULA!N36)	|| 0.00
+G22		|| No Discount
+C23		|| Less Discount (5% - New Client)
+E23	=if(G23="Repeat Client","0.00",E10*5%)	|| 0.00
+G23		|| Repeat Client
+C24		|| Prepaid Payment (Reservation fee)
+A25		|| INTERNAL WITH DRIVER
+E25	=E7	|| None
+C26		|| Total
+E26	=E20-(E23+E22+E25)	|| 3610
+A28		|| CLIENTS COPY WITH DRIVER
+C28		|| Deposit
+E28		|| Amount
+J28		|| .
+A30		|| WITH DRIVER RENTAL LOG
+C30		|| Deposit (Refundable)
+E30	=E6	|| None
+A32		|| WITH DRIVER RENTAL VIEWER
+C32		|| Terminal Fees
+E32		|| Amount
+G32		|| Cash
+C34		|| 3.5% Terminal fee
+E34	=FORMULA!J125	|| 0
+A35		|| VRA
+C35		|| 3.5% Deposit
+E35	=FORMULA!J138	|| 0
+C36		|| Rental Charges + Deposit + Terminal Fees
+E36	=E26+E30+E34+E35	|| 3610
+A37		|| VRA SERIES LOG
+C38		|| Total Days Rented
+E38	=FORMULA!M136	|| 1
+C39		|| Total Hours Rented
+E39	=FORMULA!M139&" Hrs"	|| 24 Hrs
+G39	="(" &FORMULA!M137 & " + " &FORMULA!M138 & ") = " & (FORMULA!M137 + FORMULA!M138)	|| (24 + 0) = 24
+A40		|| GCASH ENTRY
+C41		|| Fuel Consumption
+E41	=FORMULA!J154&"km/Per Liter"	|| 9km/Per Liter
+A42		|| GCASH LOG
+C42		|| Fuel Cost
+E42	=FORMULA!J157	|| 0
+A44		|| GCASH VIEWER
+C44		|| Excess Kilometer
+E44	=FORMULA!J162&" km"	|| -150 km
+C45		|| Excess Mileage
+E45	=FORMULA!J165	|| 0
+D48		|| The black -colored cells contain formulas—please do not edit them. You may modify only the Red -colored cells.

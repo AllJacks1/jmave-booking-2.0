@@ -1,0 +1,1100 @@
+C2		|| PRICE RATE CATEGORY
+D3		|| MINDANAO (Unli)
+H3		|| DAVAO REGION (Unli)
+L3		|| Within Davao City
+D4		|| 30 Days
+E4		|| 15 - 29 Days
+H4		|| 30 Days
+I4		|| 15 - 29 Days
+L4		|| 30 Days
+M4		|| 15 - 29 Days
+C5		|| Compact
+D5		|| 1800.0
+E5	=D5*120%	|| 2160
+G5		|| Compact
+H5		|| 1300.0
+I5	=H5*120%	|| 1560
+K5		|| Compact
+L5		|| 1000.0
+M5	=L5*120%	|| 1200
+O5		|| Driver fee First Day
+P5	=D154	|| 750
+C6		|| Sedan
+D6		|| 2000.0
+E6	=[shared from E5] D5*120%	|| 2400
+G6		|| Sedan
+H6		|| 1500.0
+I6	=[shared from I5] H5*120%	|| 1800
+K6		|| Sedan
+L6		|| 1200.0
+M6	=[shared from M5] L5*120%	|| 1440
+P6		|| 500.0
+C7		|| MPV
+D7		|| 2350.0
+E7	=[shared from E5] D5*120%	|| 2820
+G7		|| MPV
+H7		|| 1850.0
+I7	=[shared from I5] H5*120%	|| 2220
+K7		|| MPV
+L7		|| 1500.0
+M7	=[shared from M5] L5*120%	|| 1800
+O7		|| Standby Rate
+P7	=P5-P6	|| 250
+C8		|| SUV
+D8		|| 2850.0
+E8	=[shared from E5] D5*120%	|| 3420
+G8		|| SUV
+H8		|| 2350.0
+I8	=[shared from I5] H5*120%	|| 2820
+K8		|| SUV
+L8		|| 2000.0
+M8	=[shared from M5] L5*120%	|| 2400
+O8		|| Standby Day
+P8	=('WITH DRIVER COMPUTATION'!K5-2)	|| -1
+C9		|| Pick up
+D9		|| 2850.0
+E9	=[shared from E5] D5*120%	|| 3420
+G9		|| Pick up
+H9		|| 2350.0
+I9	=[shared from I5] H5*120%	|| 2820
+K9		|| Pick up
+L9		|| 2000.0
+M9	=[shared from M5] L5*120%	|| 2400
+P9	=P7*P8	|| -250
+C10		|| Van
+D10		|| 2850.0
+E10	=[shared from E5] D5*120%	|| 3420
+G10		|| Van
+H10		|| 2350.0
+I10	=[shared from I5] H5*120%	|| 2820
+K10		|| Van
+L10		|| 2000.0
+M10	=[shared from M5] L5*120%	|| 2400
+C11		|| Wagon
+D11		|| 2350.0
+E11	=[shared from E5] D5*120%	|| 2820
+G11		|| Wagon
+H11		|| 1850.0
+I11	=[shared from I5] H5*120%	|| 2220
+K11		|| Wagon
+L11		|| 2200.0
+M11	=[shared from M5] L5*120%	|| 2640
+C12	='WITH DRIVER COMPUTATION'!$C$5	|| SUV
+D12	=VLOOKUP($C$12,C5:E11,2,0)	|| 2850
+E12	=VLOOKUP($C$12,C5:E11,3,0)	|| 3420
+G12	='WITH DRIVER COMPUTATION'!$C$5	|| SUV
+H12	=VLOOKUP(G12,G5:I11,2,0)	|| 2350
+I12	=VLOOKUP(G12,G5:I11,3,0)	|| 2820
+K12	='WITH DRIVER COMPUTATION'!$C$5	|| SUV
+L12	=VLOOKUP(K12,K5:M11,2,0)	|| 2000
+M12	=VLOOKUP($K$12,K5:M11,3,0)	|| 2400
+C13		|| Mindanao
+D13	=IF('WITH DRIVER COMPUTATION'!K5<=14, $E$54, IF(AND('WITH DRIVER COMPUTATION'!K5>=15, 'WITH DRIVER COMPUTATION'!K5<=29), E12, IF('WITH DRIVER COMPUTATION'!K5>=30, D12, "")))	|| 3580
+G13		|| Davao Region
+H13	=IF('WITH DRIVER COMPUTATION'!K5<=14, $E$54, IF(AND('WITH DRIVER COMPUTATION'!K5>=15, 'WITH DRIVER COMPUTATION'!K5<=29), I12, IF('WITH DRIVER COMPUTATION'!K5>=30, H12, "")))	|| 3580
+K13		|| Davao Ciy
+L13	=IF('WITH DRIVER COMPUTATION'!K5<=14, $E$54, IF(AND('WITH DRIVER COMPUTATION'!K5>=15, 'WITH DRIVER COMPUTATION'!K5<=29), M12, IF('WITH DRIVER COMPUTATION'!K5>=30, L12, "")))	|| 3580
+C15		|| SEDAN Rate
+D15		|| 24.0
+E15		|| 12.0
+F15		|| 10.0
+G15		|| 8.0
+C16		|| Budgetmile
+D16		|| 1790.0
+E16		|| 1680.0
+F16	=E16-100	|| 1580
+G16		|| 1050.0
+C17		|| Primo
+D17		|| 1890.0
+E17		|| 1700.0
+F17	=[shared from F16] E16-100	|| 1600
+G17		|| 1100.0
+C18		|| Premium
+D18		|| 2000.0
+E18		|| 1800.0
+F18	=[shared from F16] E16-100	|| 1700
+G18		|| 1200.0
+D20	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",D16, if('WITH DRIVER COMPUTATION'!$E$4="Primo",D17,D18))	|| 2000
+E20	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",E16, if('WITH DRIVER COMPUTATION'!$E$4="Primo",E17,E18))	|| 1800
+F20	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",F16, if('WITH DRIVER COMPUTATION'!$E$4="Primo",F17,F18))	|| 1700
+G20	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",G16, if('WITH DRIVER COMPUTATION'!$E$4="Primo",G17,G18))	|| 1200
+C22		|| MPV Rate
+D22		|| 24.0
+E22		|| 12.0
+F22		|| 10.0
+G22		|| 8.0
+C23		|| Regular
+D23		|| 2420.0
+E23		|| 2310.0
+F23		|| 2310.0
+G23		|| 1580.0
+C24		|| Primo
+D24		|| 2630.0
+E24		|| 2520.0
+F24		|| 2520.0
+G24		|| 1790.0
+D26	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",D23,D24)	|| 2630
+E26	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",E23,E24)	|| 2520
+F26	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",F23,F24)	|| 2520
+G26	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",G23,G24)	|| 1790
+C28		|| SUV Rate
+D28		|| 24.0
+E28		|| 12.0
+F28		|| 10.0
+G28		|| 8.0
+C29		|| Regular
+D29		|| 3470.0
+E29		|| 3370.0
+F29		|| 3370.0
+G29		|| 2630.0
+C30		|| Primo
+D30		|| 3680.0
+E30		|| 3580.0
+F30		|| 3580.0
+G30		|| 2840.0
+D32	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",D29,D30)	|| 3680
+E32	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",E29,E30)	|| 3580
+F32	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",F29,F30)	|| 3580
+G32	=if('WITH DRIVER COMPUTATION'!$E$4="Budget Mile",G29,G30)	|| 2840
+C34		|| Cars Daily Rent
+C35		|| Time Duration
+D35		|| Compact
+E35		|| Sedan
+F35		|| Wagon
+G35		|| MPV
+H35		|| SUV
+I35		|| Pick up
+J35		|| Van
+C36		|| 8.0
+D36		|| 950.0
+E36	=G20	|| 1200
+F36		|| 1580.0
+G36	=G26	|| 1790
+H36	=G32	|| 2840
+I36		|| 2500.0
+J36		|| 3500.0
+C37		|| 10.0
+D37	=D38-100	|| 1370
+E37	=F20	|| 1700
+F37	=F38-100	|| 2110
+G37	=F26	|| 2520
+H37	=F32	|| 3580
+I37	=I38-100	|| 3099
+J37		|| 3500.0
+C38		|| 12.0
+D38		|| 1470.0
+E38	=E20	|| 1800
+F38		|| 2210.0
+G38	=E26	|| 2520
+H38	=E32	|| 3580
+I38		|| 3199.0
+J38		|| 3500.0
+C39		|| 24.0
+D39		|| 1580.0
+E39	=D20	|| 2000
+F39		|| 2310.0
+G39	=D26	|| 2630
+H39	=D32	|| 3680
+I39		|| 3299.0
+J39		|| 4500.0
+C41	='WITH DRIVER COMPUTATION'!I5	|| 10
+D41	=vlookup($C$41,$C$36:$J$39,2,0)	|| 1370
+E41	=vlookup($C$41,$C$36:$J$39,3,0)	|| 1700
+F41	=vlookup($C$41,$C$36:$J$39,4,0)	|| 2110
+G41	=vlookup($C$41,$C$36:$J$39,5,0)	|| 2520
+H41	=vlookup($C$41,$C$36:$J$39,6,0)	|| 3580
+I41	=vlookup($C$41,$C$36:$J$39,7,0)	|| 3099
+J41	=vlookup($C$41,$C$36:$J$39,8,0)	|| 3500
+C43		|| CAR SPECTS
+C44		|| CAR
+D44		|| Divisor
+E44		|| Daily Rent 24hrs
+F44		|| Carwash
+G44		|| CDW
+H44		|| Multiplier
+C45		|| Compact
+D45		|| 10.0
+E45	=D41	|| 1370
+F45		|| 200.0
+G45		|| 350.0
+H45		|| 4.0
+C46		|| Sedan
+D46		|| 10.0
+E46	=E41	|| 1700
+F46		|| 200.0
+G46		|| 350.0
+H46		|| 4.0
+C47		|| MPV
+D47		|| 9.0
+E47	=G41	|| 2520
+F47		|| 250.0
+G47		|| 500.0
+H47		|| 5.0
+C48		|| SUV
+D48		|| 8.0
+E48	=H41	|| 3580
+F48		|| 300.0
+G48		|| 500.0
+H48		|| 5.0
+C49		|| Pick up
+D49		|| 8.0
+E49	=I41	|| 3099
+F49		|| 300.0
+G49		|| 500.0
+H49		|| 5.0
+C50		|| Wagon
+D50		|| 9.0
+E50	=F41	|| 2110
+F50		|| 250.0
+G50		|| 500.0
+H50		|| 5.0
+C51		|| Van
+D51		|| 7.0
+E51	=J41	|| 3500
+F51		|| 350.0
+G51		|| 500.0
+H51		|| 5.0
+C54	='WITH DRIVER COMPUTATION'!C5	|| SUV
+D54	=VLOOKUP($C$54,$C$45:$H$51,2,0)	|| 8
+E54	=VLOOKUP($C$54,$C$45:$H$51,3,0)	|| 3580
+F54	=VLOOKUP($C$54,$C$45:$H$51,4,0)	|| 300
+G54	=VLOOKUP($C$54,$C$45:$H$51,5,0)	|| 500
+H54	=VLOOKUP($C$54,$C$45:$H$51,6,0)	|| 5
+C56		|| FUEL COST
+C57		|| Distance one way
+D57	='WITH DRIVER COMPUTATION'!G5	|| 50
+C58		|| Back n forth
+D58	=D57*2.2	|| 110
+C59		|| Car
+D59	=C54	|| SUV
+C60		|| Fuel Consumption
+D60	=VLOOKUP($D$59,$C$45:$D$51,2,0)	|| 8
+C61		|| Fuel Price
+D61	=IF(ISNUMBER(MATCH(C54,{"Compact","Sedan","Wagon","MPV"},0)), 'WITH DRIVER COMPUTATION'!C32, IF(ISNUMBER(MATCH(C54,{"SUV","Pick up","Van"},0)), 'WITH DRIVER COMPUTATION'!C29, ""))	|| 98
+C62		|| Fuel per Liter
+D62	=D58/D60	|| 13.75
+C63		|| Fuel Cost
+D63	=D62*D61	|| 1347.5
+C65		|| EXCESS MILEAGE
+C66		|| Back n forth
+D66	=D57*2	|| 100
+C67		|| Mileage allowance
+D67		|| 150.0
+C68		|| Number of Days
+D68	='WITH DRIVER COMPUTATION'!K5	|| 1
+C69		|| Total mileage allowance
+D69	=D67*D68	|| 150
+C70		|| Excess Km
+D70	=D66-D69	|| -50
+C71		|| Condition
+D71	=D70	|| -50
+C72		|| Multiplier
+D72	=H54	|| 5
+C73		|| Excess KM/peso
+D73	=max(sum(D71*D72),0)	|| 0
+C75		|| Pick up/Drop off Rate
+C76		|| Compact
+D76		|| 899.0
+C77		|| Sedan
+D77		|| 999.0
+C78		|| Wagon
+D78		|| 1500.0
+C79		|| MPV
+D79		|| 1500.0
+C80		|| SUV
+D80		|| 2500.0
+C81		|| Pick up
+D81		|| 2500.0
+C82		|| Van
+D82		|| 2500.0
+C83	='WITH DRIVER COMPUTATION'!C5	|| SUV
+D83	=vlookup($C$83,$C$76:$D$82,2,0)	|| 2500
+C85		|| Gas Condition
+D85		|| Renters Fuel
+E85		|| All in
+C86		|| Car Daily Rent
+D86	=IF('WITH DRIVER COMPUTATION'!U5="Within Davao City", J265, IF('WITH DRIVER COMPUTATION'!U5="Davao Region", P266, IF('WITH DRIVER COMPUTATION'!U5="Mindanao", P265, "")))	|| None
+E86	=IF('WITH DRIVER COMPUTATION'!U5="Daily", J265, IF('WITH DRIVER COMPUTATION'!U5="15 days", P266, IF('WITH DRIVER COMPUTATION'!U5="30 days", P265, "")))	|| None
+C87		|| Carwash
+D87	=K265	|| #N/A
+E87	=K265	|| #N/A
+C88		|| CDW
+D88	=IF('WITH DRIVER COMPUTATION'!U5="Daily", L265, IF('WITH DRIVER COMPUTATION'!U5="15 days", R298, IF('WITH DRIVER COMPUTATION'!U5="30 days", R297, "")))	|| None
+E88	=IF('WITH DRIVER COMPUTATION'!U5="Daily", L265, IF('WITH DRIVER COMPUTATION'!U5="15 days", R298, IF('WITH DRIVER COMPUTATION'!U5="30 days", R297, "")))	|| None
+C89		|| Excess KM
+D89	=I277	|| #N/A
+E89	=I277	|| #N/A
+C90		|| Drives fee
+D90	=IF('WITH DRIVER COMPUTATION'!U5="Daily", C277, IF('WITH DRIVER COMPUTATION'!U5="15 days", S298, IF('WITH DRIVER COMPUTATION'!U5="30 days", S297, "")))	|| None
+E90	=IF('WITH DRIVER COMPUTATION'!U5="Daily", C277, IF('WITH DRIVER COMPUTATION'!U5="15 days", S298, IF('WITH DRIVER COMPUTATION'!U5="30 days", S297, "")))	|| None
+C91		|| Others
+D91	='WITH DRIVER COMPUTATION'!Q5	|| Regular Day
+E91	='WITH DRIVER COMPUTATION'!Q5	|| Regular Day
+C92		|| Fuel
+D92		|| 0.0
+E92	=G63	|| None
+C93		|| Total
+D93	=sum(D86:D92)	|| #N/A
+E93	=[shared from D93] sum(D86:D92)	|| #N/A
+C95		|| Additional Hrs (CARS)
+C96		|| Time Duration
+D96		|| Compact
+E96		|| Sedan
+F96		|| Wagon
+G96		|| MPV
+H96		|| SUV
+I96		|| Pick up
+J96		|| Van
+C97		|| 8.0
+D97		|| 899.0
+E97	=G20	|| 1200
+F97		|| 1500.0
+G97		|| 1500.0
+H97		|| 2500.0
+I97		|| 2500.0
+J97		|| 2500.0
+C98		|| 12.0
+D98		|| 1399.0
+E98	=E20	|| 1800
+F98		|| 2099.0
+G98		|| 2199.0
+H98		|| 3199.0
+I98		|| 3199.0
+J98		|| 4000.0
+C100	='WITH DRIVER COMPUTATION'!N5	|| None
+D100	=vlookup($C$100,$C$97:$I$98,2,0)	|| #N/A
+E100	=vlookup($C$100,$C$97:$I$98,3,0)	|| #N/A
+F100	=vlookup($C$100,$C$97:$I$98,4,0)	|| #N/A
+G100	=vlookup($C$100,$C$97:$I$98,5,0)	|| #N/A
+H100	=vlookup($C$100,$C$97:$I$98,6,0)	|| #N/A
+I100	=vlookup($C$100,$C$97:$J$98,7,0)	|| #N/A
+J100	=vlookup($C$100,$C$97:$J$98,8,0)	|| #N/A
+C102		|| Additional Hrs
+F102		|| SEDAN Rate
+G102		|| 24.0
+H102		|| 12.0
+I102		|| 10.0
+J102		|| 8.0
+C103		|| CAR
+D103		|| Daily Rent
+F103		|| Budgetmile
+G103		|| 1699.0
+H103		|| 1599.0
+I103		|| 1499.0
+J103		|| 999.0
+C104		|| Compact
+D104	=D100	|| #N/A
+F104		|| Primo
+G104		|| 1799.0
+H104		|| 1699.0
+I104		|| 1599.0
+J104		|| 1099.0
+C105		|| Sedan
+D105	=E100	|| #N/A
+F105		|| Premium
+G105		|| 1899.0
+H105		|| 1799.0
+I105		|| 1699.0
+J105		|| 1199.0
+C106		|| MPV
+D106	=G100	|| #N/A
+C107		|| SUV
+D107	=H100	|| #N/A
+G107		|| 1899.0
+H107		|| 1799.0
+I107		|| 1699.0
+J107		|| 1199.0
+C108		|| Pick up
+D108	=I100	|| #N/A
+C109		|| Wagon
+D109	=F100	|| #N/A
+C110		|| Van
+D110	=J100	|| #N/A
+C112	='WITH DRIVER COMPUTATION'!C5	|| SUV
+D112	=VLOOKUP(C112,C104:D110,2,0)	|| #N/A
+C114		|| (ONE WAY) DISTANCE DRIVERS RATE
+C115		|| Time Duration
+D115		|| 1km - 70km
+E115		|| 71-110
+F115		|| 111-150
+G115		|| 151-190
+H115		|| 191-230
+I115		|| 231-270
+J115		|| 271-310
+K115		|| 311-500
+C116		|| 8.0
+D116		|| 600.0
+E116		|| 700.0
+F116		|| 800.0
+G116		|| 900.0
+H116		|| 1000.0
+I116		|| 1100.0
+J116		|| 1400.0
+K116		|| 1800.0
+C117		|| 10.0
+D117		|| 750.0
+E117		|| 900.0
+F117		|| 1000.0
+G117		|| 1100.0
+H117		|| 1200.0
+I117		|| 1300.0
+J117		|| 1600.0
+K117		|| 2000.0
+C118		|| 12.0
+D118		|| 850.0
+E118		|| 1100.0
+F118		|| 1200.0
+G118		|| 1300.0
+H118		|| 1400.0
+I118		|| 1500.0
+J118		|| 1800.0
+K118		|| 2200.0
+C119		|| 24.0
+D119		|| 1000.0
+E119		|| 1400.0
+F119		|| 1500.0
+G119		|| 1600.0
+H119		|| 1700.0
+I119		|| 1800.0
+J119		|| 1900.0
+K119		|| 2300.0
+C120	='WITH DRIVER COMPUTATION'!I5	|| 10
+D120	=_xlfn.XLOOKUP($C$120,$C$116:$C$119,D116:D119)	|| 750
+E120	=[shared from D120] _xlfn.XLOOKUP($C$120,$C$116:$C$119,D116:D119)	|| 900
+F120	=[shared from D120] _xlfn.XLOOKUP($C$120,$C$116:$C$119,D116:D119)	|| 1000
+G120	=[shared from D120] _xlfn.XLOOKUP($C$120,$C$116:$C$119,D116:D119)	|| 1100
+H120	=[shared from D120] _xlfn.XLOOKUP($C$120,$C$116:$C$119,D116:D119)	|| 1200
+I120	=[shared from D120] _xlfn.XLOOKUP($C$120,$C$116:$C$119,D116:D119)	|| 1300
+J120	=[shared from D120] _xlfn.XLOOKUP($C$120,$C$116:$C$119,D116:D119)	|| 1600
+K120	=[shared from D120] _xlfn.XLOOKUP($C$120,$C$116:$C$119,D116:D119)	|| 2000
+C122		|| Additional Hrs (Driver)
+C123		|| Time Duration
+D123		|| 1km - 70km
+E123		|| 71-110
+F123		|| 111-150
+G123		|| 151-190
+H123		|| 191-230
+I123		|| 231-270
+J123		|| 271-310
+K123		|| 311-500
+C124		|| 8.0
+D124		|| 600.0
+E124		|| 700.0
+F124		|| 800.0
+G124		|| 900.0
+H124		|| 1000.0
+I124		|| 1100.0
+J124		|| 1400.0
+K124		|| 1800.0
+C125		|| 12.0
+D125		|| 850.0
+E125		|| 1100.0
+F125		|| 1200.0
+G125		|| 1300.0
+H125		|| 1400.0
+I125		|| 1500.0
+J125		|| 1800.0
+K125		|| 2200.0
+C126	='WITH DRIVER COMPUTATION'!N5	|| None
+D126	=_xlfn.XLOOKUP($C$126,$C$124:$C$125,D124:D125)	|| #N/A
+E126	=[shared from D126] _xlfn.XLOOKUP($C$126,$C$124:$C$125,D124:D125)	|| #N/A
+F126	=[shared from D126] _xlfn.XLOOKUP($C$126,$C$124:$C$125,D124:D125)	|| #N/A
+G126	=[shared from D126] _xlfn.XLOOKUP($C$126,$C$124:$C$125,D124:D125)	|| #N/A
+H126	=[shared from D126] _xlfn.XLOOKUP($C$126,$C$124:$C$125,D124:D125)	|| #N/A
+I126	=[shared from D126] _xlfn.XLOOKUP($C$126,$C$124:$C$125,D124:D125)	|| #N/A
+J126	=[shared from D126] _xlfn.XLOOKUP($C$126,$C$124:$C$125,D124:D125)	|| #N/A
+K126	=[shared from D126] _xlfn.XLOOKUP($C$126,$C$124:$C$125,D124:D125)	|| #N/A
+C132		|| DRIVER COST 
+D132		|| Regular day
+E132		|| Holiday
+C133		|| Drivers Base Rate
+D133	=IF($D$57<=70,$D$120, IF($D$57<=110,$E$120, IF($D$57<=150,$F$120, IF($D$57<=190,$G$120, IF($D$57<=230,$H$120, IF($D$57<=270,$I$120, IF($D$57<=310,$J$120,$K$120)))))))	|| 750
+E133	=IF($I$272 <= 70, $D$120, IF($I$272 <= 110, $E$120, IF($I$272 <= 150, $F$120,IF($I$272 <= 190,$G$120,IF($I$272 <= 230, $H$120,IF($I$272 <= 270, $I$120,IF($I$272 <= 310, $J$120,K120)))))))	|| 750
+C134		|| Additional Hours
+D134	=IF($D$57<=70,$D$126, IF($D$57<=110,$E$126, IF($D$57<=150,$F$126, IF($D$57<=190,$G$126, IF($D$57<=230,$H$126, IF($D$57<=270,$I$126, IF($D$57<=310,$J$126,$K$126)))))))	|| #N/A
+C135		|| Accumodation
+D135	='WITH DRIVER COMPUTATION'!$C$19	|| None
+E135	='WITH DRIVER COMPUTATION'!$C$19	|| None
+C136		|| Meals
+D136	='WITH DRIVER COMPUTATION'!$C$22	|| 100
+E136	='WITH DRIVER COMPUTATION'!$C$22	|| 100
+C137		|| Driver Total Cost
+D137	=sum(D133:D136)	|| #N/A
+E137	=(E133*2)+E135+E136	|| 1600
+C138		|| Driver Fee
+D138	=if('WITH DRIVER COMPUTATION'!Q5="Regular Day",D133,E133)	|| 750
+C140		|| Date Start
+D140	='INTERNAL WDRIVER'!D25	|| 46356
+C141		|| Time Start
+D141	='INTERNAL WDRIVER'!D16	|| 0.3541666667
+E141	=D141	|| 0.3541666667
+C142		|| Date End
+D142	='INTERNAL WDRIVER'!D27	|| 46356
+C143		|| Time End
+D143	=IF(OR(D141="",D144=""),"", D141 + TIME(D144,0,0))	|| 0.7708333333
+E143	=D143	|| 0.7708333333
+C144		|| Contract/Base Hour
+D144	='INTERNAL WDRIVER'!D29	|| 10
+C146		|| Driver Fee
+D146	='WITH DRIVER COMPUTATION'!C11	|| 750
+F146		||  
+C147		|| Night Differential amount
+D147	=IF( OR(D140="",D141="",D142="",D143="",D144="",D146=""), "", D146 * 0.1 * MAX( 0, MIN(D142+D143, INT(D140+D141)+1 + TIME(6,0,0)) - MAX(D140+D141, INT(D140+D141) + TIME(22,1,0)) ) *24 /D144*E150 )	|| 0
+C149		|| BREAKDOWN
+D149		|| Rate
+E149		|| Days
+F149		|| Total Rate x Days
+G149		|| Back n' Forth
+H149		|| Remarks (Back n' Forth)
+I149		|| Long Term Parking
+J149		|| Remarks (Long Term Parking)
+K149		|| Pick up/Drop off Rate
+L149		|| Remarks
+C150		|| Rental Rate
+D150	=IF('WITH DRIVER COMPUTATION'!$U$5="Mindanao", $D$13, IF('WITH DRIVER COMPUTATION'!$U$5="Davao Region", $H$13, IF('WITH DRIVER COMPUTATION'!$U$5="Within Davao City", $L$13, "")))	|| 3580
+E150	='WITH DRIVER COMPUTATION'!$K$5	|| 1
+F150	=$D$150*$E$150	|| 3580
+G150	=[shared from F150] $D$150*$E$150	|| 3580
+H150	="(" &D150 & " × " &E150 & ") = " & (D150 * E150)	|| (3580 × 1) = 3580
+I150	=$D$150*$E$150	|| 3580
+J150	="(" &I150 & " × " &E150 & ") = " & (I150 * E150)	|| (3580 × 1) = 3580
+K150	=D150	|| 3580
+L150	="(" &K150 & " × " &E150 & ") = " & (K150 * E150)	|| (3580 × 1) = 3580
+C151		|| Additional Hrs.
+D151	=D112	|| #N/A
+F151	=D151	|| #N/A
+G151	=D151	|| #N/A
+H151	="(" &F151 & " × " &E151 & ") = " & (F151 * E151)	|| #N/A
+I151	=D151	|| #N/A
+J151	=[shared from J150] "(" &I150 & " × " &E150 & ") = " & (I150 * E150)	|| #N/A
+L151	=[shared from L150] "(" &K150 & " × " &E150 & ") = " & (K150 * E150)	|| ( × ) = 0
+C152		|| CDW
+D152	=G54	|| 500
+E152	='WITH DRIVER COMPUTATION'!$K$5	|| 1
+F152	=D152*E152	|| 500
+G152	=F152	|| 500
+H152	=[shared from H151] "(" &F151 & " × " &E151 & ") = " & (F151 * E151)	|| (500 × 1) = 500
+I152	=F152	|| 500
+J152	=[shared from J150] "(" &I150 & " × " &E150 & ") = " & (I150 * E150)	|| (500 × 1) = 500
+K152	=D152	|| 500
+L152	=[shared from L150] "(" &K150 & " × " &E150 & ") = " & (K150 * E150)	|| (500 × 1) = 500
+C153		|| Carwash
+D153	=F54	|| 300
+F153	=D153	|| 300
+G153	=[shared from G152] F152	|| 300
+H153	=[shared from H151] "(" &F151 & " × " &E151 & ") = " & (F151 * E151)	|| (300 × ) = 0
+I153	=[shared from I152] F152	|| 300
+J153	=[shared from J150] "(" &I150 & " × " &E150 & ") = " & (I150 * E150)	|| (300 × ) = 0
+K153	=[shared from K152] D152	|| 300
+L153	=[shared from L150] "(" &K150 & " × " &E150 & ") = " & (K150 * E150)	|| (300 × ) = 0
+C154		|| Driver's Fee
+D154	=D138	|| 750
+E154	='WITH DRIVER COMPUTATION'!$K$5	|| 1
+F154	=D154*E154	|| 750
+G154	=[shared from G152] F152	|| 750
+H154	=[shared from H151] "(" &F151 & " × " &E151 & ") = " & (F151 * E151)	|| (750 × 1) = 750
+I154	=D154	|| 750
+J154	=[shared from J150] "(" &I150 & " × " &E150 & ") = " & (I150 * E150)	|| (750 × 1) = 750
+K154		|| 200.0
+L154	=[shared from L150] "(" &K150 & " × " &E150 & ") = " & (K150 * E150)	|| (200 × 1) = 200
+C155		|| Driver fee Standby Day
+D155	=D154-500	|| 250
+E155	='WITH DRIVER COMPUTATION'!$K$5-2	|| -1
+H155		|| -
+I155	=D155*E155	|| -250
+J155	=[shared from J150] "(" &I150 & " × " &E150 & ") = " & (I150 * E150)	|| (-250 × -1) = 250
+L155	=[shared from L150] "(" &K150 & " × " &E150 & ") = " & (K150 * E150)	|| ( × -1) = 0
+C156		|| Driver fee Last Day
+D156	=D138	|| 750
+E156	='WITH DRIVER COMPUTATION'!$K$5	|| 1
+H156		|| -
+I156	=D156	|| 750
+J156	=[shared from J150] "(" &I150 & " × " &E150 & ") = " & (I150 * E150)	|| (750 × 1) = 750
+L156	=[shared from L150] "(" &K150 & " × " &E150 & ") = " & (K150 * E150)	|| ( × 1) = 0
+C157		|| Additional Hrs. (Driver)
+D157	=if('WITH DRIVER COMPUTATION'!N5="",0,D134)	|| 0
+G157	=D157	|| 0
+I157	=[shared from I156] D156	|| 0
+C158		|| Accommodation
+D158	=D135	|| None
+E158	='WITH DRIVER COMPUTATION'!$K$5	|| 1
+F158	=D158	|| None
+G158	=F158*E158	|| 0
+H158	="(" &F158 & " × " &E158 & ") = " & (F158 * E158)	|| ( × 1) = 0
+I158	=F158	|| None
+J158	="(" &I158 & " × " &E158 & ") = " & (I158 * E158)	|| ( × 1) = 0
+L158	="(" &K158 & " × " &E158 & ") = " & (K158 * E158)	|| ( × 1) = 0
+C159		|| Meal
+D159	=[shared from D158] D135	|| 100
+E159	='WITH DRIVER COMPUTATION'!$K$5	|| 1
+F159	=D159*E159	|| 100
+G159	=F159	|| 100
+H159	="(" &$D$159 & " × " &$E$159 & ") = " & ($D$159 * $E$159)	|| (100 × 1) = 100
+I159	=[shared from I158] F158	|| 100
+J159	="(" &$D$159 & " × " &$E$159 & ") = " & ($D$159 * $E$159)	|| (100 × 1) = 100
+L159	=[shared from L158] "(" &K158 & " × " &E158 & ") = " & (K158 * E158)	|| ( × 1) = 0
+C160		|| Fuel
+D160	=D63	|| 1347.5
+F160	=D160	|| 1347.5
+G160	=if('WITH DRIVER COMPUTATION'!M5="Renters fuel","",D160)	|| 1347.5
+I160	=[shared from I158] F158	|| 1347.5
+K160	=D160	|| 1347.5
+L160	=D160	|| 1347.5
+C161		|| Excess Mileage/peso
+D161	=D73	|| 0
+F161	=[shared from F160] D160	|| 0
+G161	=F161	|| 0
+I161	=[shared from I158] F158	|| 0
+K161	=[shared from K160] D160	|| 0
+L161	=[shared from L160] D160	|| 0
+C162		|| Night Differential amount
+D162	=D147	|| 0
+F162	=[shared from F160] D160	|| 0
+G162	=[shared from G161] F161	|| 0
+I162	=[shared from I158] F158	|| 0
+K162	=[shared from K160] D160	|| 0
+L162	=[shared from L160] D160	|| 0
+C163		|| Sub Total
+D163	=ROUNDUP(SUM(D150:D162), -2)+500	|| #N/A
+F163	=ROUNDUP(SUM(F150:F162), -2)+500	|| #N/A
+G163	=[shared from F163] ROUNDUP(SUM(F150:F162), -2)+500	|| #N/A
+I163	=ROUNDUP(SUM(I150:I162), -2)+500	|| #N/A
+K163	=ROUNDUP(SUM(K150:K162), -2)+500	|| 6500
+L163	=[shared from K163] ROUNDUP(SUM(K150:K162), -2)+500	|| 1900
+C165		|| Less Discount
+D165	='WITH DRIVER COMPUTATION'!$I$26	|| None
+F165	='WITH DRIVER COMPUTATION'!$I$26	|| None
+G165	='WITH DRIVER COMPUTATION'!$I$26	|| None
+I165	='WITH DRIVER COMPUTATION'!$I$26	|| None
+K165	='WITH DRIVER COMPUTATION'!$I$26	|| None
+L165	='WITH DRIVER COMPUTATION'!$I$26	|| None
+C166		|| Total
+D166	=D163-D165	|| #N/A
+F166	=F163-F165	|| #N/A
+G166	=[shared from F166] F163-F165	|| #N/A
+I166	=I163-I165	|| #N/A
+K166	=K163-K165	|| 6500
+L166	=[shared from K166] K163-K165	|| 1900
+C168		|| 3.5% Terminal fee
+D168	=if('WITH DRIVER COMPUTATION'!$K$28="Cash",0,D166*3.5%)	|| 0
+F168	=if('WITH DRIVER COMPUTATION'!$K$28="Cash",0,F166*3.5%)	|| 0
+G168	=if('WITH DRIVER COMPUTATION'!$K$28="Cash",0,G166*3.5%)	|| 0
+I168	=if('WITH DRIVER COMPUTATION'!$K$28="Cash",0,I166*3.5%)	|| 0
+K168	=if('WITH DRIVER COMPUTATION'!$K$28="Cash",0,K166*3.5%)	|| 0
+L168	=if('WITH DRIVER COMPUTATION'!$K$28="Cash",0,L166*3.5%)	|| 0
+C169		|| 3.5% Reservation Fee
+D169	=if('WITH DRIVER COMPUTATION'!$K$7="Cash",0,'WITH DRIVER COMPUTATION'!$I$7*3.5%)	|| 0
+F169	=if('WITH DRIVER COMPUTATION'!$K$7="Cash",0,'WITH DRIVER COMPUTATION'!$I$7*3.5%)	|| 0
+G169	=if('WITH DRIVER COMPUTATION'!$K$7="Cash",0,'WITH DRIVER COMPUTATION'!$I$7*3.5%)	|| 0
+I169	=if('WITH DRIVER COMPUTATION'!$K$7="Cash",0,'WITH DRIVER COMPUTATION'!$I$7*3.5%)	|| 0
+K169	=if('WITH DRIVER COMPUTATION'!$K$7="Cash",0,'WITH DRIVER COMPUTATION'!$I$7*3.5%)	|| 0
+L169	=if('WITH DRIVER COMPUTATION'!$K$7="Cash",0,'WITH DRIVER COMPUTATION'!$I$7*3.5%)	|| 0
+C171		|| TOTAL + Terminal Fees
+D171	=sum(D166:D169)	|| #N/A
+F171	=sum(F166:F169)	|| #N/A
+G171	=[shared from F171] sum(F166:F169)	|| #N/A
+I171	=sum(I166:I169)	|| #N/A
+K171	=sum(K166:K169)	|| 6500
+L171	=[shared from K171] sum(K166:K169)	|| 1900
+C173		|| Corporate
+C174		|| Additional
+D174	=IF('WITH DRIVER COMPUTATION'!$S$5="Individual",0,'WITH DRIVER COMPUTATION'!$Q$7)	|| 0
+F174	=IF('WITH DRIVER COMPUTATION'!$S$5="Individual",0,'WITH DRIVER COMPUTATION'!$Q$7)	|| 0
+G174	=IF('WITH DRIVER COMPUTATION'!$S$5="Individual",0,'WITH DRIVER COMPUTATION'!$Q$7)	|| 0
+I174	=IF('WITH DRIVER COMPUTATION'!$S$5="Individual",0,'WITH DRIVER COMPUTATION'!$Q$7)	|| 0
+K174	=IF('WITH DRIVER COMPUTATION'!$S$5="Individual",0,'WITH DRIVER COMPUTATION'!$Q$7)	|| 0
+L174	=IF('WITH DRIVER COMPUTATION'!$S$5="Individual",0,'WITH DRIVER COMPUTATION'!$Q$7)	|| 0
+C175		|| Mark-up
+D175	=D171*D174	|| #N/A
+F175	=F171*F174	|| #N/A
+G175	=[shared from F175] F171*F174	|| #N/A
+I175	=I171*I174	|| #N/A
+K175	=K171*K174	|| 0
+L175	=[shared from K175] K171*K174	|| 0
+C176		|| TOTAL + Terminal Fees
+D176	=D171+D175	|| #N/A
+F176	=F171+F175	|| #N/A
+G176	=[shared from F176] F171+F175	|| #N/A
+I176	=I171+I175	|| #N/A
+K176	=K171+K175	|| 6500
+L176	=[shared from K176] K171+K175	|| 1900
+O203	="(" &$H$184 & " × " &'WITH DRIVER COMPUTATION'!$K$5 & ") = " & ($H$184 * 'WITH DRIVER COMPUTATION'!$K$5)	|| ( × 1) = 0
+P203	="(" &$H$184 & " × " &'WITH DRIVER COMPUTATION'!$K$5 & ") = " & ($H$184 * 'WITH DRIVER COMPUTATION'!$K$5)	|| ( × 1) = 0
+J206		|| MPV Rate
+K206		|| 24.0
+L206		|| 12.0
+M206		|| 8.0
+J207		|| Regular
+K207		|| 2299.0
+L207		|| 2199.0
+M207		|| 1500.0
+J208		|| Primo
+K208		|| 2499.0
+L208		|| 2399.0
+M208		|| 1700.0
+K210	=if('SELF DRIVE COMPUTATION AND ITEN'!$E$5="Budget mile",K207,K208)	|| 2499
+L210	=if('SELF DRIVE COMPUTATION AND ITEN'!$E$5="Budget mile",L207,L208)	|| 2399
+M210	=if('SELF DRIVE COMPUTATION AND ITEN'!$E$5="Budget mile",M207,M208)	|| 1700
+B232		|| Time
+B233		|| 8.0
+B234		|| 10.0
+B235		|| 12.0
+B236		|| 24.0
+B242		|| DROPDOWN AREA
+M242		|| FUEL CONDITION
+B243		|| Davao Region
+M243	=if('WITH DRIVER COMPUTATION'!M5="Renters fuel",#REF!,E92)	|| None
+B244		|| Drivers Fee
+B245		|| 500.0
+B246		|| 750.0
+M246		|| TOTAL All-in/RF
+N246	=if('WITH DRIVER COMPUTATION'!M5="Renters fuel",D93,E93)	|| #N/A
+B247		|| 1000.0
+M247		|| Rate Increase
+N247	='WITH DRIVER COMPUTATION'!O14	|| None
+B248		|| 1200.0
+M248		|| total x Percentage
+N248	=N246*N247	|| #N/A
+M249		|| Total Return
+N249	=N246+N248	|| #N/A
+B250		|| Outside Davao Region/lampas 250km
+B251		|| Time
+C251		|| Drivers Fee
+B252		|| 10.0
+C252		|| 1200.0
+H252		|| CAR SPECTS
+B253		|| 12.0
+C253		|| 1500.0
+H253		|| CAR
+I253		|| Divisor
+J253		|| Daily Rent
+K253		|| Carwash
+L253		|| CDW
+M253		|| Multiplier
+N253		|| Fuel
+B254		|| 24.0
+C254		|| 1800.0
+H254		|| Compact
+I254		|| 10.0
+J254	=Q263	|| 1,499.00
+K254		|| 200.0
+L254		|| 350.0
+M254		|| 4.0
+N254		|| 65.0
+H255		|| Sedan
+I255		|| 10.0
+J255	=R263	|| #N/A
+K255		|| 200.0
+L255		|| 350.0
+M255		|| 4.0
+N255		|| 65.0
+B256		|| CAR FUEL CONSUMPTION
+H256		|| MPV
+I256		|| 9.0
+J256	=T263	|| 2499
+K256		|| 250.0
+L256		|| 500.0
+M256		|| 5.0
+N256		|| 65.0
+B257		|| CAR 
+C257		|| Divisor
+H257		|| SUV
+I257		|| 8.0
+J257	=U263	|| 3,299.00
+K257		|| 300.0
+L257		|| 500.0
+M257		|| 5.0
+N257		|| 60.0
+P257		|| Cars Daily Rent
+B258		|| Compact
+C258		|| 10.0
+H258		|| Pick up
+I258		|| 8.0
+J258	=V263	|| 3,299.00
+K258		|| 300.0
+L258		|| 500.0
+M258		|| 5.0
+N258		|| 60.0
+P258		|| Time Duration
+Q258		|| Compact
+R258		|| Sedan
+S258		|| Wagon
+T258		|| MPV
+U258		|| SUV
+V258		|| Pick up
+W258		|| Van
+B259		|| Sedan
+C259		|| 10.0
+H259		|| Van
+I259		|| 7.0
+J259	=W263	|| 3,500.00
+K259		|| 350.0
+L259		|| 500.0
+M259		|| 5.0
+N259		|| 60.0
+P259		|| 8.0
+Q259		|| 899.00
+R259	=F111	|| None
+S259		|| 1,500.00
+T259	=M210	|| 1700
+U259		|| 2,500.00
+V259		|| 2,500.00
+W259		|| 3,000.00
+B260		|| Wagon
+C260		|| 9.0
+H260		|| Wagon
+I260		|| 9.0
+J260	=S263	|| 2,199.00
+K260		|| 250.0
+L260		|| 500.0
+M260		|| 5.0
+N260		|| 65.0
+P260		|| 12.0
+Q260		|| 1,399.00
+R260	=E111	|| None
+S260		|| 2,099.00
+T260	=L210	|| 2399
+U260		|| 3,199.00
+V260		|| 3,199.00
+W260		|| 3,400.00
+B261		|| MPV
+C261		|| 9.0
+P261		|| 24.0
+Q261		|| 1,499.00
+R261	=D151	|| #N/A
+S261		|| 2,199.00
+T261	=K210	|| 2499
+U261		|| 3,299.00
+V261		|| 3,299.00
+W261		|| 3,500.00
+B262		|| SUV
+C262		|| 8.0
+B263		|| Pick up
+C263		|| 8.0
+P263	='SELF DRIVE COMPUTATION AND ITEN'!$E$4	|| 24
+Q263	=vlookup($P$263,$P$259:$W$261,2,0)	|| 1,499.00
+R263	=vlookup($P$263,$P$259:$W$261,3,0)	|| #N/A
+S263	=vlookup($P$263,$P$259:$W$261,4,0)	|| 2,199.00
+T263	=vlookup($P$263,$P$259:$W$261,5,0)	|| 2499
+U263	=vlookup($P$263,$P$259:$W$261,6,0)	|| 3,299.00
+V263	=vlookup($P$263,$P$259:$W$261,7,0)	|| 3,299.00
+W263	=vlookup($P$263,$P$259:$W$261,8,0)	|| 3,500.00
+B264		|| Van
+C264		|| 7.0
+B265		|| N/A
+J265	=VLOOKUP(G59,$H$254:$N$260,3,0)	|| #N/A
+K265	=VLOOKUP(G59,$H$254:$N$260,4,0)	|| #N/A
+L265	=VLOOKUP(G59,$H$254:$N$260,5,0)	|| #N/A
+M265	=VLOOKUP(G59,$H$254:$N$260,6,0)	|| #N/A
+N265	=VLOOKUP(G59,$H$254:$N$260,7,0)	|| #N/A
+B266		|| All-in
+J266	=IF('WITH DRIVER COMPUTATION'!K5 > 6,J265 - 100, J265)	|| #N/A
+B267		|| Renters fuel
+K267		|| VAN DISTANCE
+K268		|| 1km - 150km
+L268		|| 3500.0
+B269		|| Round Trip
+K269		|| 151km-above km
+L269		|| 4500.0
+B270		|| Pick up/Drop off
+L270	=IF(I272 <= 150, L268,L269)	|| 3500
+B271		|| Airport Transfer
+H271		|| EXCES MILEAGE
+G272		||  
+H272		|| Distance Back n forth
+I272	=G58	|| None
+H273		|| Mileage allowance
+I273		|| 150.0
+H274		|| Excess KM
+I274	=I272-I273	|| -150
+B275		|| Regular Day
+C275	=D137	|| #N/A
+H275		|| Condition
+I275	=if(I274>=150,I277,0)	|| 0
+B276		|| Holiday
+C276	=E137	|| 1600
+H276		|| Multiplier
+I276	=M265	|| #N/A
+B277		|| Driver rate
+C277	=if('WITH DRIVER COMPUTATION'!Q5="Regular Day",C275,C276)	|| #N/A
+H277		|| Excess KM/peso
+I277	=max(sum(I274*I276),0)	|| #N/A
+B279	='WITH DRIVER COMPUTATION'!U5	|| Davao Region
+C279	=IF('WITH DRIVER COMPUTATION'!U5="Daily", C277, IF('WITH DRIVER COMPUTATION'!U5="15 days", K292, IF('WITH DRIVER COMPUTATION'!U5="30 days", L292, "")))	|| None
+B287		|| Daily Rent
+B288		|| 15 days Rent
+B289		|| 30 days Rent
+L289	=IF($I$272 <= 70, $D$120, IF($I$272 <= 150, $E$120, IF($I$272 <= 300, $F$120, $G$120)))	|| 750
+U293		|| Solution
+Q294		|| Daily, 15, 30
+R294	=IF('WITH DRIVER COMPUTATION'!U5="Daily", N246, IF('WITH DRIVER COMPUTATION'!U5="15 days", P266, IF('WITH DRIVER COMPUTATION'!U5="30 days", P265, "")))	|| None
+S294	='WITH DRIVER COMPUTATION'!U5	|| Davao Region
+U294	=J265	|| #N/A
+V294		|| 1.0
+I295	='WITH DRIVER COMPUTATION'!Q5	|| Regular Day
+J295	=if('WITH DRIVER COMPUTATION'!Q5="Regular Day",D137,E137)	|| #N/A
+U295	=J265	|| #N/A
+V295	=Q298	|| 15
+Q296		|| Days
+R296		|| CDW
+S296		|| Driver Fee
+U296	=J265	|| #N/A
+V296	=Q297	|| 30
+H297		|| Individual
+I297	=N246	|| #N/A
+Q297		|| 30.0
+R297	=L265*Q297	|| #N/A
+S297	=D133*Q297	|| 22500
+H298		|| Corporate
+I298	=N249	|| #N/A
+Q298		|| 15.0
+R298	=L265*Q298	|| #N/A
+S298	=D133*Q298	|| 11250
+U298	=J265	|| #N/A
+V298	=IF('WITH DRIVER COMPUTATION'!U5="Daily", V294, IF('WITH DRIVER COMPUTATION'!U5="15 days", V295, IF('WITH DRIVER COMPUTATION'!U5="30 days", V296, "")))	|| None
+H300	='WITH DRIVER COMPUTATION'!S5	|| Individual
+I300	=if(H300="Individual",I297,I298)	|| #N/A
+H301		|| Round Up
+I301	=ROUNDUP(I300,-2)+500	|| #N/A
+H304		|| Rental Terminal Fee
+K304		|| Cash Fee 
+H305		|| Sub total Roud up
+I305	='WITH DRIVER COMPUTATION'!I28	|| 7100
+K305		|| Sub total Roud up
+L305	='WITH DRIVER COMPUTATION'!I28	|| 7100
+H306		|| 3.5% Terminal Fee
+I306	=I305*3.5%	|| 248.5
+K306		|| 3.5% Terminal Fee
+L306		|| 0.0
+H307		|| Total+ Terminal Fee
+I307	=I305+I306	|| 7348.5
+K307		|| Total+ Terminal Fee
+L307	=L305	|| 7100
+K309		|| 3.5% Terminal Fee
+L309		|| Total+ Terminal Fee
+M309		|| 0.035
+I310		|| Terminal Fee
+J310	=I307	|| 7348.5
+K310	=I306	|| 248.5
+L310	=I307	|| 7348.5
+M310		|| 0.035
+I311		|| Cash Fee 
+J311	=L307	|| 7100
+K311	=L306	|| 0
+L311	=L307	|| 7100
+M311		|| 0.0
+I313	='WITH DRIVER COMPUTATION'!K28	|| Cash
+J313	=if(I313="Terminal Fee",I307,L307)	|| 7100
+K313	=vlookup(J313,J310:L311,2,0)	|| 0
+L313	=[shared from K313] vlookup(J313,J310:L311,2,0)	|| 7100
+M313	=[shared from K313] vlookup(J313,J310:L311,2,0)	|| 0
+H316		|| Reservation Terminal Fee
+K316		|| Cash Fee 
+H317		|| Sub total Roud up
+I317	='WITH DRIVER COMPUTATION'!I7	|| None
+K317		|| Sub total Roud up
+L317	='WITH DRIVER COMPUTATION'!I7	|| None
+H318		|| 3.5% Terminal Fee
+I318	=I317*3.5%	|| 0
+K318		|| 3.5% Terminal Fee
+L318		|| 0.0
+H319		|| Total+ Terminal Fee
+I319	=I317+I318	|| 0
+K319		|| Total+ Terminal Fee
+L319	=L317	|| None
+K321		|| 3.5% Terminal Fee
+L321		|| Total+ Terminal Fee
+M321		|| 0.035
+I322		|| Terminal Fee
+J322	=I319	|| 0
+K322	=I318	|| 0
+L322	=I319	|| 0
+M322		|| 0.035
+I323		|| Cash Fee 
+J323	=L319	|| None
+K323	=L318	|| 0
+L323	=L319	|| None
+M323		|| 0.0
+I325	='WITH DRIVER COMPUTATION'!K7	|| Cash
+J325	=if(I325="Terminal Fee",I319,L319)	|| None
+K325	=vlookup(J325,J322:L323,2,0)	|| 0
+L325	=[shared from K325] vlookup(J325,J322:L323,2,0)	|| 0
+M325	=[shared from K325] vlookup(J325,J322:L323,2,0)	|| 0.035
+A332		|| Round Trip
+B332		|| ✅ Driver stays with you for the entire active contract (hours or full 24 hrs).
+✅Multiple destinations allowed (Point A → B → C).
+✅Driver does not return to the office while the contract is active.
+✅If charged per hours or 24 hrs, the driver may return to the office only after the contract ends. If there’s a new contract the next day, the driver will come back to your location.
+A333		|| Pick up/Drop off
+B333		|| ✅The service covers one direct route only, from Point A → Point B.
+✅Side trips, additional stops, waiting time, or changes in route are not included in this contract type.
+✅Any request beyond the agreed destination will be subject to additional charges.
+A334		|| Airport Transfer
+B334		|| ✅Route is strictly from Airport → Point B (e.g., Hotel or Residence)
+✅Side trips, additional stops, waiting time, or changes in route are not included in this contract type.
+✅Any request beyond the agreed destination will be subject to additional charges.
+A335	='WITH DRIVER COMPUTATION'!P5	|| None
+B335	=VLOOKUP(A335,A332:B334,2,0)	|| #N/A
+A340		|| Time
+A341		|| 0.0
+A342		|| 0.020833333333333332
+A343		|| 0.041666666666666664
+A344		|| 0.0625
+A345		|| 0.08333333333333333
+A346		|| 0.10416666666666667
+A347		|| 0.125
+A348		|| 0.14583333333333334
+A349		|| 0.16666666666666666
+A350		|| 0.1875
+A351		|| 0.20833333333333334
+A352		|| 0.22916666666666666
+A353		|| 0.25
+A354		|| 0.2708333333333333
+A355		|| 0.2916666666666667
+A356		|| 0.3125
+A357		|| 0.3333333333333333
+A358		|| 0.3541666666666667
+A359		|| 0.375
+A360		|| 0.3958333333333333
+A361		|| 0.4166666666666667
+A362		|| 0.4375
+A363		|| 0.4583333333333333
+A364		|| 0.4791666666666667
+A365		|| 0.5
+A366		|| 0.5208333333333334
+A367		|| 0.5416666666666666
+A368		|| 0.5625
+A369		|| 0.5833333333333334
+A370		|| 0.6041666666666666
+A371		|| 0.625
+A372		|| 0.6458333333333334
+A373		|| 0.6666666666666666
+A374		|| 0.6875
+A375		|| 0.7083333333333334
+A376		|| 0.7291666666666666
+A377		|| 0.75
+A378		|| 0.7708333333333334
+A379		|| 0.7916666666666666
+A380		|| 0.8125
+A381		|| 0.8333333333333334
+A382		|| 0.8541666666666666
+A383		|| 0.875
+A384		|| 0.8958333333333334
+A385		|| 0.9166666666666666
+A386		|| 0.9375
+A387		|| 0.9583333333333334
+A388		|| 0.9791666666666666
+A390		|| Compact
+B390		|| Our posted rates are valid for trips within and outside Davao City. The package comes with a 150km mileage allowance, and just add Php 4/excess km after 150km. We will get the odometer reading at the start of the trip, and odo at the end of the trip to determine your actual mileage. Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*4=120 pesos additional payment 
+A391		|| Sedan
+B391		|| Our posted rates are valid for trips within and outside Davao City. The package comes with a 150km mileage allowance, and just add Php 4/excess km after 150km. We will get the odometer reading at the start of the trip, and odo at the end of the trip to determine your actual mileage. Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*4=120 pesos additional payment 
+A392		|| MPV
+B392		|| Our posted rates are valid for trips within and outside Davao City. The package comes with a 150km mileage allowance, and just add Php 5/excess km after 150km. We will get the odometer reading at the start of the trip, and odo at the end of the trip to determine your actual mileage. Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment 
+A393		|| SUV
+B393		|| Our posted rates are valid for trips within and outside Davao City. The package comes with a 150km mileage allowance, and just add Php 5/excess km after 150km. We will get the odometer reading at the start of the trip, and odo at the end of the trip to determine your actual mileage. Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment 
+A394		|| Pick up
+B394		|| Our posted rates are valid for trips within and outside Davao City. The package comes with a 150km mileage allowance, and just add Php 5/excess km after 150km. We will get the odometer reading at the start of the trip, and odo at the end of the trip to determine your actual mileage. Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment 
+A395		|| Wagon
+B395		|| Our posted rates are valid for trips within and outside Davao City. The package comes with a 150km mileage allowance, and just add Php 5/excess km after 150km. We will get the odometer reading at the start of the trip, and odo at the end of the trip to determine your actual mileage. Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment 
+A396	='WITH DRIVER COMPUTATION'!C5	|| SUV
+B396	=_xlfn.XLOOKUP(A396,A390:A395,B390:H395)	|| Our posted rates are valid for trips within and outside Davao City. The package comes with a 150km mileage allowance, and just add Php 5/excess km after 150km. We will get the odometer reading at the start of the trip, and odo at the end of the trip to determine your actual mileage. Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment 

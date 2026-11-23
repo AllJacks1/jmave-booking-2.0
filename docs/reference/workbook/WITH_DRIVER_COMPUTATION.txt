@@ -1,0 +1,136 @@
+A1		|| 17.0
+E1		|| WITH DRIVER QUOTATION
+C4		|| Car
+G4		|| Distance
+K4		|| Number of Days
+M4		|| ALL-IN / RF
+N4		|| Additional Hrs.
+O4		|| PACKAGE TYPE
+Q4		|| EVENT
+S4		|| Individual / Corporate
+U4		|| Service Area:
+W4		|| Driving Term
+C5		|| SUV
+E5		|| Primo
+G5		|| 50.0
+I5		|| 10.0
+K5		|| 1.0
+M5		|| All-in
+O5		|| Pick up/Drop off
+Q5		|| Regular Day
+S5		|| Individual
+U5		|| Davao Region
+W5		|| Back n' Forth
+A6		|| HOME
+E6		|| .
+G7		|| Reservation Fee
+K7		|| Cash
+Q8		|| Mark-up
+A9		|| SELF DRIVE COMPUTATION AND ITENERARY
+C10		|| DRIVER BASE RATE
+G10		|| BREAKDOWN
+I10		|| Amount
+K10		|| Remarks
+C11	=IF(OR(AND(C12="Contract Rate", P5="Round Trip"), C12="Contract Rate"), 'FORMULA WDRIVER'!D133, IF(AND(G5<23, OR(P5="Pick up/Drop off", P5="Airport Transfer"), C12="Working Hour"), 200, "Not Applicable" ) )	|| 750
+G11		|| Rental Rate
+I11	=IF(OR(P5="Pick up/Drop off", P5="Airport Transfer"), 'FORMULA WDRIVER'!K150, 'FORMULA WDRIVER'!G150)	|| 3580
+K11	='FORMULA WDRIVER'!H150	|| (3580 × 1) = 3580
+A12		|| INTERNAL SELF DRIVE
+C12		|| Contract Rate
+G12		|| Additional Hrs. (Car)
+I12	=IF($N$5="","",'FORMULA WDRIVER'!$G$151)	|| None
+G13		|| CDW
+I13	='FORMULA WDRIVER'!G152	|| 500
+K13	='FORMULA WDRIVER'!H152	|| (500 × 1) = 500
+A14		|| CLIENT COPY SELF DRIVE
+C14		|| ADDITIONAL HOURS
+G14		|| Carwash
+I14	='FORMULA WDRIVER'!G153	|| 300
+K14	='FORMULA WDRIVER'!G187	|| None
+C15	=IF(N5="", 0, IF(OR(AND(C12="Contract Rate", P5="Round Trip"), C12="Contract Rate"), 'FORMULA WDRIVER'!D134, IF(AND(G5<23, OR(P5="Pick up/Drop off", P5="Airport Transfer"), C12="Working Hour"), 200, "Not Applicable" ) ) )	|| 0
+G15	=IF(W5="Back n' Forth", "Driver's Fee", IF(W5="Long Term Parking", "Driver Fee First Day", ""))	|| Driver's Fee
+I15	=if(W5="Back n' Forth",'FORMULA WDRIVER'!G154,'FORMULA WDRIVER'!I154)	|| 750
+K15	='FORMULA WDRIVER'!G188	|| None
+G16	=IF(W5="Back n' Forth", "-", IF(W5="Long Term Parking", "Driver Fee Standby", ""))	|| -
+I16	=if(W5="Back n' Forth",'FORMULA WDRIVER'!G155,'FORMULA WDRIVER'!I155)	|| None
+K16	='FORMULA WDRIVER'!G189	|| None
+A17		|| SELF DRIVEN RENTAL LOG
+G17	=IF(W5="Back n' Forth", "-", IF(W5="Long Term Parking", "Driver Fee Last Day", ""))	|| -
+I17	=if(W5="Back n' Forth",'FORMULA WDRIVER'!G156,'FORMULA WDRIVER'!I156)	|| None
+K17	='FORMULA WDRIVER'!G190	|| None
+C18		|| Accommodation
+G18		|| Additional Hrs. (Driver)
+I18	='FORMULA WDRIVER'!G157	|| 0
+A19		|| SELF DRIVEN RENTAL VIEWER
+G19		|| Accommodation
+I19	='FORMULA WDRIVER'!G158	|| 0
+K19	='FORMULA WDRIVER'!H158	|| ( × 1) = 0
+G20		|| Meal
+I20	='FORMULA WDRIVER'!G159	|| 100
+K20	='FORMULA WDRIVER'!H159	|| (100 × 1) = 100
+C21		|| MEAL
+G21		|| Fuel
+I21	='FORMULA WDRIVER'!G160	|| 1347.5
+K21	='FORMULA WDRIVER'!G193	|| None
+A22		|| WITH DRIVER COMPUTATION
+C22		|| 100.0
+G22		|| Excess Mileage
+I22	='FORMULA WDRIVER'!G161	|| 0
+G23		|| Night Differential amount
+I23	='FORMULA WDRIVER'!$G$162	|| 0
+C24		|| DRIVER TOTAL COST
+G24		|| Sub Total
+I24	=ROUNDUP(SUM(I11:I23), -2)+500	|| 7100
+A25		|| INTERNAL WITH DRIVER
+C25	=SUM(C11:C22)	|| 850
+G26		|| Less Discount
+C27		|| FUEL PRICE
+A28		|| CLIENTS COPY WITH DRIVER
+C28		|| Diesel
+G28		|| Total
+I28	=I24-(I26+I27)	|| 7100
+K28		|| Cash
+C29		|| 98.0
+A30		|| WITH DRIVER RENTAL LOG
+G30		|| 3.5% Terminal fee
+I30	=if($K$28="Cash",0,$I$28*3.5%)	|| 0
+C31		|| Gasoline
+G31		|| 3.5% Reservation Fee
+I31	=if(K7="Cash",0,I7*3.5%)	|| 0
+A32		|| WITH DRIVER RENTAL VIEWER
+C32		|| 89.0
+I32	='FORMULA WDRIVER'!N361	|| None
+G33		|| TOTAL + Terminal Fees
+I33	=sum(I28:I32)	|| 7100
+C34		|| 380km Mindanao
+A35		|| VRA
+C35		|| 150km Davao Region
+G35		|| CORPORATE
+I35		|| Amount
+K35		|| Remarks
+C36		|| 70km Within Davao City
+G36		|| Additional %
+I36	=IF(S5="Individual",0,Q7)	|| 0
+A37		|| VRA SERIES LOG
+G37		|| Mark-up
+I37	=I33*I36	|| 0
+G38		|| TOTAL + Terminal Fees
+I38	=I33+I37	|| 7100
+A40		|| GCASH ENTRY
+G40		|| Total Days Rented
+I40	=K5&" Days"	|| 1 Days
+A42		|| GCASH LOG
+G42		|| Fuel Consumption
+I42	='FORMULA WDRIVER'!D60&"km/Per Liter"	|| 8km/Per Liter
+G43		|| Fuel Cost
+I43	='FORMULA WDRIVER'!D63	|| 1347.5
+A44		|| GCASH VIEWER
+E55		|| The yellow-colored cells contain formulas—please do not edit them. You may modify only the white-colored cells.
+E57		|| 8 Hours - 100 Meal
+E58		|| 10 Hours - 200 Meal
+E59		|| 12 Hours - 200 Meal
+E60		|| 24 Hours - 300 Meal With Accomodation 150 per hour Computation to Get Accomodation
+E63		|| Pick-Up/Drop Off Rate CDO Area - 24-Hours Rental Rate
+E64		|| 6 Hours One Way Trip - Automatically 24-Hours Rental Rate
+E66		|| Booking Confirmation - Cacellation Fee 2,000
+I82		||  

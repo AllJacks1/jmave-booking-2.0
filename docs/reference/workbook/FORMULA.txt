@@ -1,0 +1,496 @@
+B1		|| DROPDOWN AREA
+B3		|| Davao Region
+B4		|| Drivers Fee
+D4		|| Time
+B5		|| 500.0
+D5		|| 8.0
+B6		|| 750.0
+D6		|| 12.0
+B7		|| 1000.0
+D7		|| 24.0
+B8		|| 1200.0
+B10		|| Outside Davao Region/lampas 250km
+H10		|| 1.0
+I10		|| Rental Rate
+J10	=J74	|| 2630
+B11		|| Time
+C11		|| Drivers Fee
+H11		|| 2.0
+I11		|| Additional Hrs.
+J11	=J81	|| #N/A
+B12		|| 10.0
+C12		|| 1200.0
+H12		|| 3.0
+I12		|| CDW
+J12	=J89	|| 0
+B13		|| 12.0
+C13		|| 1500.0
+H13		|| 4.0
+I13		|| Carwash
+J13	=K74	|| 250
+L13		|| July Rate
+M13		|| 0.05
+B14		|| 24.0
+C14		|| 1800.0
+H14		|| 5.0
+I14		|| Delivery Fee
+J14		|| Edited
+H15		|| 6.0
+I15		|| Picku-p Fee
+J15		|| Edited
+B16		|| CAR FUEL CONSUMPTION
+H16		|| 7.0
+I16		|| OT Premium
+B17		|| CAR 
+C17		|| Divisor
+H17		|| 8.0
+I17		|| Beyond Operating Hours
+B18		|| 24.0
+C18		|| 10.0
+H18		|| 9.0
+I18		|| Hourly Extension Rate
+J18	=K105	|| 0
+B19		|| Sedan
+C19		|| 10.0
+H19		|| 10.0
+I19		|| April Tiered Discount Promo
+B20		|| MPV
+C20		|| 9.0
+I20		|| Sub Total
+B21		|| SUV
+C21		|| 8.0
+B22		|| Pick up
+C22		|| 8.0
+I22		|| Less Discount
+B23		|| Wagon
+C23		|| 9.0
+H23		|| 8.0
+I23		|| Reservation Fee
+B24		|| Van
+C24		|| 7.0
+I24		|| TOTAL
+B25		|| All-in
+B26		|| Renters fuel
+I26		|| 3.5% Terminal fee
+I27		|| TOTAL + Terminal Fee
+B28		|| Round Trip
+B29		|| Pick up/Drop off
+H29		|| 10.0
+I29		|| Deposit
+I30		|| GRAND TOTAL
+H33		|| SEDAN Rate
+I33		|| 24.0
+J33		|| 12.0
+K33		|| 8.0
+M33		|| PROMO
+H34		|| Budgetmile
+I34	=roundup(1699*(1+$M$13),-1)	|| 1790
+J34	=roundup(1599*(1+$M$13),-1)	|| 1680
+K34	=roundup(999*(1+$M$13),-1)	|| 1050
+M34		|| 1-4 days / 10%
+N34	=J83*10%	|| 263
+H35		|| Primo
+I35	=roundup(1799*(1+$M$13),-1)	|| 1890
+J35	=roundup(1699*(1+N13),-1)	|| 1700
+K35	=roundup(1099*(1+O13),-1)	|| 1100
+M35		|| 5- and above / 15%
+N35	=J83*10%	|| 263
+H36		|| Premium
+I36	=roundup(1899*(1+$M$13),-1)	|| 2000
+J36	=roundup(1799*(1+N13),-1)	|| 1800
+K36	=roundup(1200*(1+O13),-1)	|| 1200
+N36	=if(J80<=4,N34,N35)	|| 263
+O36	=if($J$80<=4,"10%","10%")	|| 10%
+I38	=IF('SELF DRIVE COMPUTATION AND ITEN'!$G$4="Budget Mile", I34, IF('SELF DRIVE COMPUTATION AND ITEN'!$G$4="Premium", I36, I35))	|| 1890
+J38	=IF('SELF DRIVE COMPUTATION AND ITEN'!$G$4="Budget Mile", J34, IF('SELF DRIVE COMPUTATION AND ITEN'!$G$4="Premium", J36, J35))	|| 1700
+K38	=IF('SELF DRIVE COMPUTATION AND ITEN'!$G$4="Budget Mile", K34, IF('SELF DRIVE COMPUTATION AND ITEN'!$G$4="Premium", K36, K35))	|| 1100
+H40		|| MPV Rate
+I40		|| 24.0
+J40		|| 12.0
+K40		|| 8.0
+H41		|| Budgetmile
+I41	=roundup(2299*(1+$M$13),-1)	|| 2420
+J41	=roundup(2199*(1+$M$13),-1)	|| 2310
+K41	=roundup(1500*(1+$M$13),-1)	|| 1580
+H42		|| Primo
+I42	=roundup(2499*(1+$M$13),-1)	|| 2630
+J42	=roundup(2399*(1+$M$13),-1)	|| 2520
+K42	=roundup(1700*(1+$M$13),-1)	|| 1790
+B44		|| Regular Day
+C44	=D65	|| None
+I44	=if('SELF DRIVE COMPUTATION AND ITEN'!G4="Budget Mile",I41,I42)	|| 2630
+J44	=if('SELF DRIVE COMPUTATION AND ITEN'!G4="Budget mile",J41,J42)	|| 2520
+K44	=if('SELF DRIVE COMPUTATION AND ITEN'!G4="Budget mile",K41,K42)	|| 1790
+B45		|| Holiday
+C45	=G65	|| None
+B46		|| Driver rate
+C46	=if('SELF DRIVE COMPUTATION AND ITEN'!J4="Regular Day",C44,C45)	|| None
+H47		|| SUV Rate
+I47		|| 24.0
+J47		|| 12.0
+K47		|| 8.0
+H48		|| Budgetmile
+I48	=roundup(3299*(1+$M$13),-1)	|| 3470
+J48	=I48-100	|| 3370
+K48	=roundup(2500*(1+$M$13),-1)	|| 2630
+H49		|| Primo
+I49	=roundup(3499*(1+$M$13),-1)	|| 3680
+J49	=[shared from J48] I48-100	|| 3580
+K49	=roundup(2700*(1+$M$13),-1)	|| 2840
+I51	=if('SELF DRIVE COMPUTATION AND ITEN'!G4="Budget Mile",I48,I49)	|| 3680
+J51	=if('SELF DRIVE COMPUTATION AND ITEN'!G4="Budget Mile",J48,J49)	|| 3580
+K51	=if('SELF DRIVE COMPUTATION AND ITEN'!G4="Budget Mile",K48,K49)	|| 2840
+H55		|| Cars Daily Rent
+H56		|| Time Duration
+I56		|| Compact
+J56		|| Sedan
+K56		|| Wagon
+L56		|| MPV
+M56		|| SUV
+N56		|| Pick up
+O56		|| Van
+Q56		|| Additional Hrs
+H57		|| 8.0
+I57	=roundup(899*(1+$M$13),-1)	|| 950
+J57	=K38	|| 1100
+K57	=roundup(1500*(1+$M$13),-1)	|| 1580
+L57	=K44	|| 1790
+M57	=K51	|| 2840
+N57		|| 2500.0
+O57		|| 3500.0
+Q57		|| Time Duration
+R57		|| Compact
+S57		|| Sedan
+T57		|| Wagon
+U57		|| MPV
+V57		|| SUV
+W57		|| Pick up
+X57		|| Van
+H58		|| 12.0
+I58	=roundup(1399*(1+$M$13),-1)	|| 1470
+J58	=J38	|| 1700
+K58	=roundup(2099*(1+$M$13),-1)	|| 2210
+L58	=J44	|| 2520
+M58	=J51	|| 3580
+N58		|| 3199.0
+O58		|| 4500.0
+Q58		|| 8.0
+R58		|| 950.0
+S58	=K38	|| 1100
+T58		|| 1580.0
+U58	=K44	|| 1790
+V58	=K51	|| 2840
+W58		|| 2500.0
+X58		|| 2500.0
+H59		|| 24.0
+I59	=roundup(1499*(1+$M$13),-1)	|| 1580
+J59	=I38	|| 1890
+K59	=roundup(2199*(1+$M$13),-1)	|| 2310
+L59	=I44	|| 2630
+M59	=I51	|| 3680
+N59		|| 3299.0
+O59		|| 4500.0
+Q59		|| 12.0
+R59		|| 1470.0
+S59	=J58	|| 1700
+T59		|| 2210.0
+U59	=J44	|| 2520
+V59	=J51	|| 3580
+W59		|| 3199.0
+X59		|| 3400.0
+H61	='SELF DRIVE COMPUTATION AND ITEN'!$E$4	|| 24
+I61	=vlookup(H61,$H$57:$I$59,2,0)	|| 1580
+J61	=vlookup($H61,$H$57:$J$59,3,0)	|| 1890
+K61	=vlookup($H61,$H$57:$K$59,4,0)	|| 2310
+L61	=vlookup(H61,$H$57:$L$59,5,0)	|| 2630
+M61	=vlookup(H61,$H$57:$M$59,6,0)	|| 3680
+N61	=vlookup(H61,$H$57:$N$59,7,0)	|| 3299
+O61	=vlookup($H$61,$H$57:$O$59,8,0)	|| 4500
+Q61	='SELF DRIVE COMPUTATION AND ITEN'!N4	|| None
+R61	=vlookup($Q$61,$Q$58:$V$59,2,0)	|| #N/A
+S61	=vlookup($Q$61,$Q$58:$V$59,3,0)	|| #N/A
+T61	=vlookup($Q$61,$Q$58:$V$59,4,0)	|| #N/A
+U61	=vlookup($Q$61,$Q$58:$V$59,5,0)	|| #N/A
+V61	=vlookup($Q$61,$Q$58:$V$59,6,0)	|| #N/A
+W61	=vlookup($Q$61,$Q$58:$W$59,7,0)	|| #N/A
+X61	=vlookup($Q$61,$Q$58:$X$59,8,0)	|| #N/A
+W62		|| .
+H63		|| CAR SPECTS
+H64		|| CAR
+I64		|| Divisor
+J64		|| Daily Rent
+K64		|| Carwash
+L64		|| CDW
+M64		|| Multiplier
+Q64		|| CAR
+R64		|| Daily Rent
+H65		|| Compact
+I65		|| 10.0
+J65	=I61	|| 1580
+K65		|| 200.0
+L65		|| 350.0
+M65		|| 4.0
+Q65		|| Compact
+R65	=R61	|| #N/A
+H66		|| Sedan
+I66		|| 10.0
+J66	=J61	|| 1890
+K66		|| 200.0
+L66		|| 350.0
+M66		|| 4.0
+Q66		|| Sedan
+R66	=S61	|| #N/A
+H67		|| MPV
+I67		|| 9.0
+J67	=L61	|| 2630
+K67		|| 250.0
+L67		|| 500.0
+M67		|| 5.0
+Q67		|| MPV
+R67	=U61	|| #N/A
+H68		|| SUV
+I68		|| 8.0
+J68	=M61	|| 3680
+K68		|| 300.0
+L68		|| 500.0
+M68		|| 5.0
+Q68		|| SUV
+R68	=V61	|| #N/A
+H69		|| Pick up
+I69		|| 8.0
+J69	=N61	|| 3299
+K69		|| 300.0
+L69		|| 500.0
+M69		|| 5.0
+Q69		|| Pick up
+R69	=W61	|| #N/A
+H70		|| Wagon
+I70		|| 9.0
+J70	=K61	|| 2310
+K70		|| 250.0
+L70		|| 500.0
+M70		|| 5.0
+Q70		|| Wagon
+R70	=T61	|| #N/A
+H71		|| Van
+I71		|| 7.0
+J71	=O61	|| 4500
+K71		|| 350.0
+L71		|| 500.0
+M71		|| 5.0
+Q71		|| Van
+R71	=X61	|| #N/A
+H74	='SELF DRIVE COMPUTATION AND ITEN'!C4	|| MPV
+J74	=VLOOKUP(H74,$H$65:$M$71,3,0)	|| 2630
+K74	=VLOOKUP($H$74,$H$65:$M$71,4,0)	|| 250
+L74	=VLOOKUP($H$74,$H$65:$M$71,5,0)	|| 500
+M74	=VLOOKUP($H$74,$H$65:$M$71,6,0)	|| 5
+Q74	=H74	|| MPV
+R74	=VLOOKUP(Q74,Q65:R73,2,0)	|| #N/A
+J75		|| 1.0
+K75		|| Carwash
+G77		|| 1 to 6 days
+I77		|| TOTAL RENTAL DAY RENT
+G78		|| 7 Days sbove
+I78		|| Car Daily Rent
+J78	=J74	|| 2630
+I79		|| Beyond Operating Hrs formula
+J79	=IF('SELF DRIVE COMPUTATION AND ITEN'!S4="", 0, IF('SELF DRIVE COMPUTATION AND ITEN'!S4="10:01 PM – 5:29 AM", 500))	|| 0
+K79	=J79*J80	|| 0
+L79		|| beyond operating hrs
+I80		|| Number of Days
+J80	='SELF DRIVE COMPUTATION AND ITEN'!M4	|| 1
+K80		|| Rental Rate remarks
+I81		|| Additional Hrs.
+J81	=R74	|| #N/A
+K81		|| Additional hrs
+I82		|| 7 Days above
+J82	=IF('SELF DRIVE COMPUTATION AND ITEN'!H4="No Discount", J78, IF(J80 > 6, J78 - 100, J78))	|| 2630
+K82		|| Rental Rate remarks
+I83		|| Total day rented
+J83	=(J82*J80)	|| 2630
+K83		|| Rental Rate
+H85		|| CDW CONDITION
+I85		|| TOTAL RENT W/CDW
+H86	=if('SELF DRIVE COMPUTATION AND ITEN'!J4="With CDW",L74,"")	|| None
+I86		|| CDW
+J86	=H86	|| None
+K86		|| CDW remarks
+N86	=1899*61	|| 115839
+H87		|| 2.0
+I87		|| Number of Days
+J87	='SELF DRIVE COMPUTATION AND ITEN'!M4	|| 1
+K87	=J87+L87	|| 1
+L87	=if(J88=8,1, if(J88=12,1,""))	|| None
+I88		|| Additional Hrs
+J88	='SELF DRIVE COMPUTATION AND ITEN'!N4	|| None
+K88	=if('SELF DRIVE COMPUTATION AND ITEN'!J4="With CDW",L74,"")	|| None
+I89		|| Total day w/CDW
+J89	=IF('SELF DRIVE COMPUTATION AND ITEN'!N4<>"", J86*J87+K88, J86*K87)	|| 0
+K89		|| CDW
+H90		|| OT PREMIUM
+H91	=IF('SELF DRIVE COMPUTATION AND ITEN'!S4="", 0, IF('SELF DRIVE COMPUTATION AND ITEN'!S4="7:01 PM – 1:00 AM", 500, IF('SELF DRIVE COMPUTATION AND ITEN'!S4="1:01 AM – 6:00 AM", 300, 0)))	|| 0
+H92		|| 6.0
+J94		|| PER HOUR
+H95		|| TOTAL RENT W/CDW
+J95		|| Compact
+K95		|| 300.0
+H96		|| CDW
+I96	=M128	|| None
+J96		|| Sedan
+K96		|| 300.0
+H97		|| Number of Days
+I97	='SELF DRIVE COMPUTATION AND ITEN'!M4	|| 1
+J97		|| Wagon
+K97		|| 350.0
+H98		|| Total day w/CDW
+I98	=I96*I97	|| 0
+J98		|| MPV
+K98		|| 350.0
+J99		|| SUV
+K99		|| 400.0
+J101		|| Pick up
+K101		|| 400.0
+J103	=H74	|| MPV
+K103	=vlookup($J$103,$J$95:$K$101,2,0)	|| 350
+J104		|| Number of Hours
+K104	='SELF DRIVE COMPUTATION AND ITEN'!P4	|| 0
+J105		|| Total Extension per Hour
+K105	=K103*K104	|| 0
+L105		|| hrly extension rate
+J107		|| 7.0
+I121		|| Total Breakdown
+I122		|| Total Breakdown
+J122	='SELF DRIVE COMPUTATION AND ITEN'!E26	|| 3610
+I123		|| No Terminal Fee
+J123	=J122-J122	|| 0
+I124		|| With Terminal Fee
+J124	=(J122*3.5%)	|| 126.35
+I125	='SELF DRIVE COMPUTATION AND ITEN'!G32	|| Cash
+J125	=if('SELF DRIVE COMPUTATION AND ITEN'!G32="Cash",J123,J124)	|| 0
+K125		|| Terminal Fee
+I127		|| Reservation Fee
+I128		|| reservation Fee
+J128	='SELF DRIVE COMPUTATION AND ITEN'!E7	|| None
+I129		|| No Terminal Fee
+J129	=J128-J128	|| 0
+I130		|| With Terminal Fee
+J130	=(J128*3.5%)	|| 0
+I131	='SELF DRIVE COMPUTATION AND ITEN'!G7	|| None
+J131	=IF(OR(I131="Cash", I131="G-Cash"), J129, J130 * (1 - 0.035))	|| 0
+I134		|| Deposit
+I135		|| Deposit
+J135	='SELF DRIVE COMPUTATION AND ITEN'!E6	|| None
+L135		|| Number of Booking Day
+M135	=H61	|| 24
+I136		|| No Terminal Fee
+J136	=J135-J135	|| 0
+L136		|| Number of Days
+M136	='SELF DRIVE COMPUTATION AND ITEN'!M4	|| 1
+N136		|| Total Days Rented
+I137		|| With Terminal Fee
+J137	=(J135*3.5%)	|| 0
+L137		|| Total hour of BD + No. of days
+M137	=M135*M136	|| 24
+I138	='SELF DRIVE COMPUTATION AND ITEN'!G6	|| Cash
+J138	=IF(OR('SELF DRIVE COMPUTATION AND ITEN'!G6="Cash", 'SELF DRIVE COMPUTATION AND ITEN'!G6="G-Cash"), J136, J137)	|| 0
+K138		|| 3.5% deposit
+L138		|| Extension No. of Hours
+M138	='SELF DRIVE COMPUTATION AND ITEN'!P4	|| 0
+L139		|| Total Number of Hour
+M139	=M137+M138	|| 24
+N139		|| Total Hours Rented
+I141		|| CAR
+J141		|| Divisor
+I142		|| Compact
+J142		|| 10.0
+I143		|| Sedan
+J143		|| 10.0
+I144		|| MPV
+J144		|| 9.0
+L144		|| CASH DEPOSIT
+P144		|| SWIPE 3.5% TERMINAL FEE
+I145		|| SUV
+J145		|| 8.0
+L145		|| (2) number of days
+M145	=IF(OR('SELF DRIVE COMPUTATION AND ITEN'!M4=0, 'SELF DRIVE COMPUTATION AND ITEN'!M4=1,'SELF DRIVE COMPUTATION AND ITEN'!M4=""), J130, M132)	|| 0
+P145		|| (2) number of days
+Q145	=IF(OR('SELF DRIVE COMPUTATION AND ITEN'!M4=0, 'SELF DRIVE COMPUTATION AND ITEN'!M4=1,'SELF DRIVE COMPUTATION AND ITEN'!M4=""), J130, M132)	|| 0
+I146		|| Pick up
+J146		|| 8.0
+L146		|| Deposit
+M146	=J138	|| 0
+P146		|| Deposit
+Q146	=J138	|| 0
+I147		|| Wagon
+J147		|| 9.0
+L147		|| Total Extension per Hour
+M147	=K105	|| 0
+P147		|| Total Extension per Hour
+Q147	=K105	|| 0
+L148		|| OT PREMIUM
+M148	=H91	|| 0
+P148		|| OT PREMIUM
+Q148	=H91	|| 0
+L149		|| Delivery Fee
+M149	='SELF DRIVE COMPUTATION AND ITEN'!E14	|| 365
+P149		|| Delivery Fee
+Q149	='SELF DRIVE COMPUTATION AND ITEN'!E14	|| 365
+I150		|| FUEL COST
+L150		|| Picku-p Fee
+M150	='SELF DRIVE COMPUTATION AND ITEN'!E16	|| None
+P150		|| Picku-p Fee
+Q150	='SELF DRIVE COMPUTATION AND ITEN'!E16	|| None
+I151		|| Distance one way
+J151	='SELF DRIVE COMPUTATION AND ITEN'!U4	|| None
+L151		|| Reservation Fee
+M151	='SELF DRIVE COMPUTATION AND ITEN'!E6	|| None
+P151		|| Reservation Fee
+Q151	='SELF DRIVE COMPUTATION AND ITEN'!E6+('SELF DRIVE COMPUTATION AND ITEN'!E6*3.5%)	|| 0
+I152		|| Back n forth
+J152	=J151*2	|| 0
+I153		|| Car
+J153	=H74	|| MPV
+I154		|| Fuel Consumption
+J154	=VLOOKUP(J153,I142:J147,2,0)	|| 9
+K154		|| Fuel Consumption
+L154		|| GRAND TOTAL
+M154	=sum(M145:M152)	|| 365
+P154		|| GRAND TOTAL
+Q154	=sum(Q145:Q152)	|| 365
+I155		|| Fuel Price
+J155	=IF(ISNUMBER(MATCH(H74,{"Compact","Sedan","Wagon","MPV"},0)), 'SELF DRIVE COMPUTATION AND ITEN'!W5, IF(ISNUMBER(MATCH(H74,{"SUV","Pick up","Van"},0)), 'SELF DRIVE COMPUTATION AND ITEN'!W7, ""))	|| 94
+I156		|| Fuel per Liter
+J156	=J152/J154	|| 0
+I157		|| Fuel Cost
+J157	=J156*J155	|| 0
+K157		|| Fuel Cost
+I159		|| EXCES MILEAGE
+I160		|| Distance
+J160	=J152	|| 0
+I161		|| Mileage allowance
+J161		|| 150.0
+I162		|| Excess KM
+J162	=J160-J161	|| -150
+K162		|| Excess Kilometer
+I163		|| Condition
+J163	=if(J162>=150,J165,0)	|| 0
+I164		|| Multiplier
+J164	=M74	|| 5
+I165		|| Excess KM/peso
+J165	=max(sum(J162*J164),0)	|| 0
+K165		|| Excess Mileage
+A178		|| Compact
+B178		|| Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*4=120 pesos additional payment 
+A179		|| Sedan
+B179		|| Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*4=120 pesos additional payment 
+A180		|| MPV
+B180		|| Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment.
+A181		|| SUV
+B181		|| Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment.
+A182		|| Pick up
+B182		|| Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment.
+A183		|| Wagon
+B183		|| Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment.
+A184	='SELF DRIVE COMPUTATION AND ITEN'!C4	|| MPV
+B184	=_xlfn.XLOOKUP(A184,A178:A183,B178:H183)	|| Example: Davao to Nabunturan is 180km roundtrip. Actual Mileage (180) minus free mileage (150) = 30km excess 30*5=150 pesos additional payment.
