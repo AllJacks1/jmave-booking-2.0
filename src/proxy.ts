@@ -6,7 +6,8 @@ import { NextResponse, type NextRequest } from "next/server";
  * /login. Real checks (valid session, active user, permissions) happen in
  * every page, server action and route handler.
  */
-const PUBLIC_PATHS = ["/login", "/setup", "/api/auth", "/api/health"];
+// `/q/<token>`: public read-only shared quotation (PLAN §6.5).
+const PUBLIC_PATHS = ["/login", "/setup", "/api/auth", "/api/health", "/q"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

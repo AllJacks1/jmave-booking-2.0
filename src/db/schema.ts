@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   date,
@@ -14,7 +15,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 // Relative import: drizzle-kit does not resolve the `@/` alias.
-import { BODY_TYPES, FUEL_TYPES } from "../lib/pricing/types";
+import { BODY_TYPES, FUEL_TYPES, SERVICES, type Service } from "../lib/pricing/types";
 
 const createdAt = () =>
   timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -292,7 +293,72 @@ export const importRuns = pgTable(
   (t) => [index("import_runs_created_at_idx").on(t.createdAt)],
 );
 
+// ---------------------------------------------------------------------------
+// Phase 1c: quotations
+// ---------------------------------------------------------------------------
+
+export const QUOTATION_KINDS = ["quick", "formal"] as const;
+export const quotationKindEnum = pgEnum("quotation_kind", QUOTATION_KINDS);
+export { SERVICES, type Service };
+export const serviceEnum = pgEnum("service", SERVICES);
+/** `expired` is also computed on read (issued + valid_until < now). */
+export const QUOTATION_STATUSES = ["draft", "issued", "accepted", "expired", "lost", "cancelled"] as const;
+export type QuotationStatus = (typeof QUOTATION_STATUSES)[number];
+export const quotationStatusEnum = pgEnum("quotation_status", QUOTATION_STATUSES);
+
+export const quotations = pgTable(
+  "quotations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** `QTN-2026-929` / `QTN-WD2026-119`; null for quick quotations and drafts. */
+    number: text("number").unique(),
+    kind: quotationKindEnum("kind").notNull(),
+    service: serviceEnum("service").notNull(),
+    status: quotationStatusEnum("status").notNull().default("draft"),
+    clientId: uuid("client_id").references(() => clients.id, { onDelete: "restrict" }),
+    /** Client name as quoted (optional free text on quick quotations; snapshot on formal). */
+    clientName: text("client_name"),
+    vehicleId: uuid("vehicle_id").references(() => vehicles.id, { onDelete: "set null" }),
+    bodyType: bodyTypeEnum("body_type"),
+    category: text("category"),
+    startAt: timestamp("start_at", { withTimezone: true }),
+    endAt: timestamp("end_at", { withTimezone: true }),
+    /** Form inputs (src/lib/quotes/schema.ts `QuoteForm`), incl. the engine inputs. */
+    inputs: jsonb("inputs").notNull(),
+    /** Engine result snapshot (lines, totals, payable); null while a draft does not price. */
+    result: jsonb("result"),
+    /** Names frozen at issue: client, vehicle, consultant (display only). */
+    snapshot: jsonb("snapshot"),
+    rateCardId: uuid("rate_card_id").references(() => rateCards.id, { onDelete: "restrict" }),
+    totalCentavos: integer("total_centavos"),
+    validUntil: timestamp("valid_until", { withTimezone: true }),
+    consultantId: uuid("consultant_id").references(() => user.id, { onDelete: "set null" }),
+    /** Random 32 bytes (base64url) for `/q/[token]`; set on issue. */
+    shareToken: text("share_token").unique(),
+    issuedAt: timestamp("issued_at", { withTimezone: true }),
+    revisedFromId: uuid("revised_from_id").references((): AnyPgColumn => quotations.id, { onDelete: "set null" }),
+    /** Lost reason, or "Revised by QTN-…" on a cancelled quotation. */
+    statusNote: text("status_note"),
+    blacklistOverrideReason: text("blacklist_override_reason"),
+    blacklistOverrideBy: uuid("blacklist_override_by").references(() => user.id, { onDelete: "set null" }),
+    /** Internal; never on the client copy. */
+    notes: text("notes"),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("quotations_status_idx").on(t.status, t.validUntil),
+    index("quotations_consultant_idx").on(t.consultantId, t.createdAt),
+    index("quotations_created_at_idx").on(t.createdAt),
+    index("quotations_client_idx").on(t.clientId),
+    index("quotations_revised_from_idx").on(t.revisedFromId),
+    index("quotations_client_name_trgm_idx").using("gin", t.clientName.op("gin_trgm_ops")),
+  ],
+);
+
 export type UserRow = typeof user.$inferSelect;
+export type QuotationRow = typeof quotations.$inferSelect;
 export type AuditLogRow = typeof auditLog.$inferSelect;
 export type VehicleRow = typeof vehicles.$inferSelect;
 export type RateCardRow = typeof rateCards.$inferSelect;

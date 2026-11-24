@@ -234,6 +234,16 @@ External calls (Rework, email) never run inside a user request. The request writ
 | 2026-11-23 | Pick-up/drop-off and airport-transfer packages are priced as one trip (days = 1, with a warning). The holiday multiplier applies to the per-day driver fee everywhere it is used (standby, night differential). |
 | 2026-11-23 | Payable block: "due today" = reservation fee + its terminal fee + delivery fee; balance on release = total contract value − due today (same as pricing.md when paid in cash). |
 | 2026-11-23 | Clients: phone and email must be unique on manual create/edit (409 names the other client). "Repeat client" = `first_rental_at` is set (Phase 2a bookings will set it too). |
+| 2026-11-24 | New permission `quotes.override_blacklist` (Admin and up): issue a quotation for a blacklisted client with a reason (stored on the quotation + audit). Sales get 403. Issuing a formal quotation needs a client. |
+| 2026-11-24 | Quotation pages call `forbidden()` (Next `experimental.authInterrupts`) so Operations get a real **403**, not a 200 "No access" page. `/dashboard` is a quotations page too (Operations land on `/board`). |
+| 2026-11-24 | Share link lifetime follows PLAN §6.5, not the brief: between `valid_until` and +30 days `/q/[token]` still shows the quotation with an "expired, contact us" notice; after that, or once cancelled (revised), only the message and business contacts show. |
+| 2026-11-24 | A saved quick quotation is `kind=quick, status=issued`, no number, no share token, valid for `quote_validity_hours`. "Download PDF" saves it first (PDFs come from stored results). "Make formal" copies its inputs into a new formal draft. |
+| 2026-11-24 | Self-Drive days from release → return (overridable): ≤ 8 h / ≤ 12 h / ≤ 24 h = one day on that tier; longer = whole 24 h days, a remainder ≤ 8 h or ≤ 12 h becomes that additional-hours block, a longer remainder one more day. OT premium slot from times: the release slot, else the return slot (PLAN Q10), overridable. |
+| 2026-11-24 | With Driver form: start date + start time, end time (same every day; crosses midnight when not after the start), days. `end_at` = first day's end + (days − 1) days. |
+| 2026-11-24 | `quotations` extra columns: `client_name`, `snapshot` (client / vehicle / consultant names frozen at save/issue), `notes` (internal), `status_note` (lost reason, "Revised by QTN-…"), `blacklist_override_reason/by`, `created_by`. `total_centavos` = Self-Drive rental total, With Driver grand total. Inputs are one flat form (`src/lib/quotes/schema.ts`) for both services. |
+| 2026-11-24 | Status rules: accept only an issued, unexpired quotation (409 otherwise); lost allowed on issued or expired; revise from issued, accepted, expired or lost; one open revision draft per source. |
+| 2026-11-24 | PDFs use the Geist TTF from the `geist` npm package (built-in PDF fonts have no ₱ glyph). Text wordmark until `public/brand/logo.png` exists (picked up automatically). |
+| 2026-11-24 | Copy text: the rental line carries the day count ("Rental rate (1 day)"); estimates say ESTIMATE and add "Estimate only…"; card terminal fee and With Driver grand total get their own lines when present. |
 
 ## 8. Open questions (build with the default; confirm with the owner when possible)
 
@@ -316,3 +326,25 @@ Append one entry per session. Newest last.
   - Re-importing does not rename existing rate cards (names are not compared).
 - Decisions made (also added to §7): upload limit 40 MB; night differential on 24h; additional hours by category; pricing.md constants; imports never erase; client grouping; `import_runs` extra columns; transfer packages as one trip; payable "due today"; client phone/email uniqueness and the repeat-client rule.
 - Deployed: no (see above).
+
+### 2026-11-24 — Phase 1c — Quotations and PDFs
+- Built:
+  - Migration `0002_phase_1c`: `quotations` (PLAN §4 + `revised_from_id`, `client_name`, `snapshot`, `notes`, `status_note`, blacklist override columns, `created_by`), enums `quotation_kind`, `service`, `quotation_status`; trigram index on client name.
+  - `src/lib/numbering.ts`: `nextNumber(tx, key)` (`SELECT … FOR UPDATE`), keys `QTN-{Manila year}` / `QTN-WD{year}`, 3-digit padding, grows past 999.
+  - Pure modules: `src/lib/pricing/schedule.ts` (Self-Drive days/tier/block/OT slot from dates; With Driver window), `src/lib/quotes/` (`schema` shared form, `engine` form → engine, `document` view model + formatters + copy text + file names, `terms` client text, `defaults`).
+  - `src/lib/quotes/service.ts`: live price preview, quick save, draft autosave, issue (re-prices with the active card inside the transaction, blacklist gate, number, validity from settings, share token, snapshot, cancels the revised quotation), revise, mark lost / accepted, list with filters, dashboard, share-token lookup. Audit rows for quick save, issue, cancel, revise, lost, accepted.
+  - Pages: `/quotes/quick`, `/quotes/new`, `/quotes/[id]` (editor for drafts and estimates; read-only client copy + actions + internal panel once issued), `/quotes` (status, service, type, consultant, date range, search by number or client), `/dashboard` (expiring in 6 h, my quotes today, recent). Client picker with inline new client; blacklist warning; repeat/new detection with override.
+  - PDFs (`src/lib/pdf/quotation.tsx`, `@react-pdf/renderer`, Geist font): estimate, Self-Drive and With Driver layouts per quote-documents.md. Routes `GET /api/quotations/[id]/pdf` (staff) and `GET /q/[token]/pdf` (public). Public share page `/q/[token]` (noindex, no staff data).
+  - `forbidden()` + `src/app/forbidden.tsx`: quotation pages return 403 to Operations.
+  - Fixed a Phase 1b engine bug: the fuel line remark showed the distance ÷ 100 ("12 km" for 1,200 km). Amounts were right.
+  - Tests: unit (schedule, form mapping, SD-2 copy text exactly as the brief, WD-1/WD-5, formats, file names, PDF smoke renders incl. long names and 15+ lines, fuel remark), integration (20 parallel issues → 929…948 gap-free; rollback burns no number; WD key/year/padding; first SD issue after import = `QTN-2026-929`; rate-card change leaves issued quotations alone; blacklist 403 for Sales, reason required for Admin; revise/cancel; lost/accepted/expired; quick save; Operations 403 on every action), e2e `tests/e2e/phase-1c.spec.ts` (quick SD-2 → copy text + PDF; formal with new client → issue `QTN-2026-110` → copy text → staff PDF → share link signed out shows no internal data → public PDF; blacklisted client blocked for Sales; Operations 403 on pages and PDF route).
+- Results: `pnpm lint` clean, `pnpm typecheck` clean, `pnpm test` 414/414 (16 files), `pnpm e2e` 14/14.
+- Not done / deferred:
+  - **Not deployed** (needs the owner's go-ahead; Phase 1b is also still undeployed). `railway up --service web` runs migrations `0001` and `0002` on pre-deploy.
+  - No logo yet: PDFs and the share page use a text wordmark; dropping `public/brand/logo.png` in is picked up by the PDFs automatically (share page still shows the wordmark).
+  - "Expired" is computed on read; the nightly job is Phase 3. Email sending is Phase 3.
+- Known issues:
+  - PDF text copied out of a viewer loses ligatures ("confrmed") because Geist uses fi/tt ligatures; the printed page is correct.
+  - E2E sign-ins hit Better Auth's 10/min limit; `phase-1c.spec.ts` reuses sessions and waits out the limit once (the Operations test takes ~1 min).
+- Decisions made (also added to §7): `quotes.override_blacklist`; `forbidden()` for 403; share-link lifetime per PLAN §6.5 (brief differs); quick quotations saved as numberless issued estimates; Self-Drive schedule from dates; With Driver form shape; extra `quotations` columns and `total_centavos` meaning; status transition rules; Geist PDF font; copy-text details.
+- Deployed: no.

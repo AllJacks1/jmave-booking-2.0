@@ -28,6 +28,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Railway IaC file, typed by the Railway CLI, not this project.
     ".railway/**",
+    // Playwright output (gitignored).
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 

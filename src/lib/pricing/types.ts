@@ -118,3 +118,10 @@ export class PricingInputError extends Error {
     this.name = "PricingInputError";
   }
 }
+
+export const SERVICES = ["self_drive", "with_driver"] as const;
+export type Service = (typeof SERVICES)[number];
+export const SERVICE_LABELS: Record<Service, string> = {
+  self_drive: "Self-Drive",
+  with_driver: "With Driver",
+};

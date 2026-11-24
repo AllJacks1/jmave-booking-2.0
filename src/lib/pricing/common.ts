@@ -63,7 +63,8 @@ export function fuelCost(
 }
 
 export function fuelRemark(oneWayKm: number, factorTenths: number, kmPerLiter: number, price: number): string {
-  const km = remarkNumber(mulDiv([kmToMetres(oneWayKm), factorTenths], [10_000]) / 100);
+  // metres × factor/10 ÷ 1000 = km; computed in hundredths of a km (÷ 100, not ÷ 10,000).
+  const km = remarkNumber(mulDiv([kmToMetres(oneWayKm), factorTenths], [100]) / 100);
   return `${km} km ÷ ${remarkNumber(kmPerLiter)} km/L × ₱${remarkPesos(price)}/L`;
 }
 

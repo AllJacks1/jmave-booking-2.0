@@ -33,8 +33,8 @@ export type NavItem = {
  * (phase 2b brief §9) because those are the only `*.view` actions they hold.
  */
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: "dashboard", permission: "quotes.manage", comingIn: "1c", group: "work" },
-  { href: "/quotes", label: "Quotations", icon: "quotes", permission: "quotes.manage", comingIn: "1c", group: "work" },
+  { href: "/dashboard", label: "Dashboard", icon: "dashboard", permission: "quotes.manage", group: "work" },
+  { href: "/quotes", label: "Quotations", icon: "quotes", permission: "quotes.manage", group: "work" },
   { href: "/bookings", label: "Bookings", icon: "bookings", permission: "bookings.manage", comingIn: "2a", group: "work" },
   { href: "/clients", label: "Clients", icon: "clients", permission: "clients.view", group: "work" },
   { href: "/rewards", label: "Rewards", icon: "rewards", permission: "rewards.view", comingIn: "3", group: "work" },

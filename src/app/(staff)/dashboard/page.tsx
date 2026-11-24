@@ -1,8 +1,68 @@
+import { FilePlus2Icon, ZapIcon } from "lucide-react";
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/placeholder-page";
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { PageHeader } from "@/components/page-header";
+import { QuoteTable } from "@/components/quotes/quote-table";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { requireQuotesPage } from "@/lib/quotes/page";
+import { dashboardData } from "@/lib/quotes/service";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-export default function Page() {
-  return <PlaceholderPage href="/dashboard" />;
+export default async function DashboardPage() {
+  const user = await requireQuotesPage();
+  const { mine, expiring, recent } = await dashboardData(user);
+  return (
+    <>
+      <PageHeader
+        title={`Hello, ${user.displayName}`}
+        actions={
+          <>
+            <Button asChild variant="secondary">
+              <Link href="/quotes/quick">
+                <ZapIcon />
+                Quick quote
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/quotes/new">
+                <FilePlus2Icon />
+                New quotation
+              </Link>
+            </Button>
+          </>
+        }
+      />
+      <Panel title={`Expiring in the next 6 hours (${expiring.length})`}>
+        <QuoteTable rows={expiring} showValidity empty="Nothing expiring soon." />
+      </Panel>
+      <Panel title={`My quotes today (${mine.length})`}>
+        <QuoteTable rows={mine} empty="No quotes yet today." />
+      </Panel>
+      <Panel
+        title="Recent quotes"
+        action={
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/quotes">View all</Link>
+          </Button>
+        }
+      >
+        <QuoteTable rows={recent} />
+      </Panel>
+    </>
+  );
+}
+
+function Panel({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
+  return (
+    <Card className="gap-2 pb-0">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>{title}</CardTitle>
+        {action}
+      </CardHeader>
+      <CardContent className="px-0">{children}</CardContent>
+    </Card>
+  );
 }
