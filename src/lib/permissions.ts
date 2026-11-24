@@ -22,6 +22,8 @@ const SALES_UP: readonly Role[] = ["super_admin", "admin", "sales"];
 export const PERMISSIONS = {
   // Quick + formal quotations: create, edit, issue, PDF, share link, email
   "quotes.manage": SALES_UP,
+  // Issue a quotation for a blacklisted client (with a reason): Admin and up (Phase 1c brief)
+  "quotes.override_blacklist": ADMIN_UP,
   // Clients: view, create, edit
   "clients.view": SALES_UP,
   "clients.edit": SALES_UP,

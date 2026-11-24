@@ -195,3 +195,12 @@ describe("Self-Drive edge cases", () => {
     expect(() => price({ bodyType: "compact", deliveryFee: -1 })).toThrow(PricingInputError);
   });
 });
+
+describe("fuel remark shows the round-trip distance", () => {
+  it("600 km one-way → 1,200 km (Self-Drive ×2), 180 km → 396 km (With Driver ×2.2)", async () => {
+    const { fuelRemark } = await import("./common");
+    expect(fuelRemark(600, 20, 9, 9400)).toBe("1,200 km ÷ 9 km/L × ₱94/L");
+    expect(fuelRemark(180, 22, 10, 9400)).toBe("396 km ÷ 10 km/L × ₱94/L");
+    expect(fuelRemark(12.345, 20, 9, 9400)).toBe("24.69 km ÷ 9 km/L × ₱94/L");
+  });
+});

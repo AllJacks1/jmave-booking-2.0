@@ -16,3 +16,4 @@ export {
   type WithDriverResult,
   type WdHoursTier,
 } from "./with-driver";
+export { selfDriveSchedule, otSlotAt, otSlotFor, withDriverWindow, type SelfDriveSchedule, type WithDriverWindow } from "./schedule";
