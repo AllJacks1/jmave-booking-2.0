@@ -6,10 +6,12 @@
  *
  * Imports never erase: a blank workbook value leaves the DB value alone.
  */
-import { eq, sql } from "drizzle-orm";
+import { eq, isNotNull, sql } from "drizzle-orm";
 import type { DbOrTx } from "@/db/client";
-import { clients, numberSequences, rateCards, vehicles, type ClientRow, type RateCardRow, type VehicleRow } from "@/db/schema";
+import { clients, drivers, numberSequences, quotations, rateCards, vehicles, type ClientRow, type RateCardRow, type VehicleRow } from "@/db/schema";
 import { withAudit } from "@/lib/audit";
+import { addToIndex, indexClients, matchClient, type ClientIndex } from "./client-match";
+import { activeHoldsByVehicle, bufferMinutesOrDefault, planDrivers, planHistory } from "./history-plan";
 import { diffRateCards } from "@/lib/pricing/rate-card";
 import type {
   BlacklistImport,
@@ -27,6 +29,7 @@ import type {
 type Op = (tx: DbOrTx, actor: { id: string }) => Promise<void>;
 
 export type ImportPlan = { summary: ImportSummary; ops: Op[] };
+export type { Op };
 
 /** Preview items kept per section (the counts always cover everything). */
 const MAX_ITEMS = 5000;
@@ -193,37 +196,6 @@ function planRateCards(
 // Clients
 // ---------------------------------------------------------------------------
 
-type ClientIndex = {
-  byPhone: Map<string, ClientRow>;
-  byEmail: Map<string, ClientRow>;
-  byName: Map<string, ClientRow[]>;
-};
-
-function indexClients(rows: ClientRow[]): ClientIndex {
-  const idx: ClientIndex = { byPhone: new Map(), byEmail: new Map(), byName: new Map() };
-  for (const c of rows) addToIndex(idx, c);
-  return idx;
-}
-
-function addToIndex(idx: ClientIndex, c: ClientRow) {
-  if (c.phone && !idx.byPhone.has(c.phone)) idx.byPhone.set(c.phone, c);
-  if (c.email && !idx.byEmail.has(c.email.toLowerCase())) idx.byEmail.set(c.email.toLowerCase(), c);
-  const k = c.fullName.toLowerCase();
-  idx.byName.set(k, [...(idx.byName.get(k) ?? []), c]);
-}
-
-function nameKey(fullName: string, fbName: string | null) {
-  return `${fullName.toLowerCase()}|${(fbName ?? "").toLowerCase()}`;
-}
-
-/** Name-only match: prefer a client without phone/email; else the only client with that name + FB name. */
-function matchByName(idx: ClientIndex, c: ClientImport): ClientRow | undefined {
-  const same = (idx.byName.get(c.fullName.toLowerCase()) ?? []).filter(
-    (x) => nameKey(x.fullName, x.fbName) === nameKey(c.fullName, c.fbName),
-  );
-  return same.find((x) => !x.phone && !x.email) ?? (same.length === 1 ? same[0] : undefined);
-}
-
 function otherContactsNote(c: ClientImport): string | null {
   return c.otherContacts.length ? `Imported contact (not a PH number): ${c.otherContacts.join(" / ")}` : null;
 }
@@ -231,10 +203,7 @@ function otherContactsNote(c: ClientImport): string | null {
 function planClients(items: ClientImport[], idx: ClientIndex, s: SectionSummary, ops: Op[]) {
   const used = new Set<string>();
   for (const c of items) {
-    const match =
-      c.phones.map((p) => idx.byPhone.get(p)).find(Boolean) ??
-      c.emails.map((e) => idx.byEmail.get(e)).find(Boolean) ??
-      (!c.phone && !c.email ? matchByName(idx, c) : undefined);
+    const match = matchClient(idx, c);
     const label = c.fullName;
     const note = otherContactsNote(c);
     if (!match) {
@@ -408,6 +377,34 @@ export async function planImport(payload: ImportPayload, db: DbOrTx): Promise<Im
     const seq = newSection("sequences", payload.warnings);
     planSequences(payload.sequences, new Map(seqRows.map((r) => [r.key, r.lastValue])), seq, ops);
     sections.push(fleet, cards, cl, seq);
+    if (payload.drivers) {
+      const dr = newSection("drivers", payload.warnings);
+      planDrivers(payload.drivers, await db.select({ name: drivers.name }).from(drivers), dr, ops);
+      sections.push(dr);
+    }
+    if (payload.history) {
+      const hist = newSection("history", payload.warnings);
+      const [numbers, buffer, holds] = await Promise.all([
+        db.select({ number: quotations.number }).from(quotations).where(isNotNull(quotations.number)),
+        bufferMinutesOrDefault(db),
+        activeHoldsByVehicle(db),
+      ]);
+      await planHistory(
+        {
+          history: payload.history,
+          clients: payload.clients,
+          fleet: payload.fleet,
+          existingNumbers: new Set(numbers.map((n) => n.number!)),
+          vehicles: vehicleRows,
+          buffer,
+          holds,
+          now: new Date(),
+        },
+        hist,
+        ops,
+      );
+      sections.push(hist);
+    }
   } else {
     const clientRows = await db.select().from(clients);
     const bl = newSection("blacklist", payload.warnings);

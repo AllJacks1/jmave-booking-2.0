@@ -7,7 +7,13 @@ import { PageHeader } from "@/components/page-header";
 import { NoAccess } from "@/components/placeholders";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookingStatusBadge } from "@/components/bookings/status";
+import { QuoteStatusBadge } from "@/components/quotes/status-badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { clientHistory, rentalDays } from "@/lib/bookings/queries";
+import { SERVICE_LABELS } from "@/lib/pricing/types";
+import { effectiveStatus, fmtPeso } from "@/lib/quotes/document";
 import { requirePage } from "@/lib/auth/page";
 import { CLIENT_TYPE_LABELS } from "@/lib/clients/schema";
 import { getClient, isRepeatClient } from "@/lib/clients/service";
@@ -32,6 +38,9 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const c = await getClient(id);
   if (!c) notFound();
+  const history = await clientHistory(c.id);
+  const canBookings = can(user, "bookings.manage");
+  const canQuotes = can(user, "quotes.manage");
 
   return (
     <>
@@ -104,8 +113,101 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
       <Card>
         <CardHeader>
           <CardTitle>Rental history</CardTitle>
+          <CardDescription>
+            {history.rentals} rental{history.rentals === 1 ? "" : "s"} · {history.lifetimeDays} day{history.lifetimeDays === 1 ? "" : "s"} rented in total
+          </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">Quotations and bookings appear here from Phase 1c and 2a.</CardContent>
+        <CardContent className="flex flex-col gap-6 px-0">
+          <div>
+            <h3 className="px-6 pb-2 text-sm font-medium">Bookings</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-6">Number</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead>Release</TableHead>
+                  <TableHead>Return</TableHead>
+                  <TableHead className="pr-6 text-right">Days</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {history.bookings.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="pl-6 text-muted-foreground">
+                      No bookings.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  history.bookings.map((b) => (
+                    <TableRow key={b.id}>
+                      <TableCell className="pl-6 font-medium">
+                        {canBookings ? (
+                          <Link className="underline-offset-4 hover:underline" href={`/bookings/${b.id}`}>
+                            {b.number}
+                          </Link>
+                        ) : (
+                          b.number
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <BookingStatusBadge status={b.status} />
+                      </TableCell>
+                      <TableCell className="max-w-48 truncate">{b.vehicleName ?? "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatManilaDateTime(b.startAt)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatManilaDateTime(b.endAt)}</TableCell>
+                      <TableCell className="pr-6 text-right tabular-nums">{rentalDays(b.startAt, b.endAt)}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <div>
+            <h3 className="px-6 pb-2 text-sm font-medium">Quotations</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-6">Number</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Travel date</TableHead>
+                  <TableHead className="pr-6 text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {history.quotations.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="pl-6 text-muted-foreground">
+                      No quotations.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  history.quotations.map((q) => (
+                    <TableRow key={q.id}>
+                      <TableCell className="pl-6 font-medium">
+                        {canQuotes ? (
+                          <Link className="underline-offset-4 hover:underline" href={`/quotes/${q.id}`}>
+                            {q.number}
+                          </Link>
+                        ) : (
+                          q.number
+                        )}
+                        {q.imported ? <span className="ml-2 text-xs text-muted-foreground">imported</span> : null}
+                      </TableCell>
+                      <TableCell>
+                        <QuoteStatusBadge status={effectiveStatus(q)} />
+                      </TableCell>
+                      <TableCell>{SERVICE_LABELS[q.service]}</TableCell>
+                      <TableCell>{q.startAt ? formatManilaDate(q.startAt) : "—"}</TableCell>
+                      <TableCell className="pr-6 text-right tabular-nums">{q.totalCentavos !== null ? fmtPeso(q.totalCentavos) : "—"}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
       </Card>
     </>
   );

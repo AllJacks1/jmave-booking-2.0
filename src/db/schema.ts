@@ -3,6 +3,8 @@ import {
   type AnyPgColumn,
   bigint,
   boolean,
+  check,
+  customType,
   date,
   index,
   integer,
@@ -16,6 +18,17 @@ import {
 } from "drizzle-orm/pg-core";
 // Relative import: drizzle-kit does not resolve the `@/` alias.
 import { BODY_TYPES, FUEL_TYPES, SERVICES, type Service } from "../lib/pricing/types";
+import {
+  BLOCK_KINDS,
+  BOOKING_STATUSES,
+  CHARGE_KINDS,
+  CHARGE_SOURCES,
+  HOLD_KINDS,
+  PAYMENT_DIRECTIONS,
+  PAYMENT_METHODS,
+  PAYMENT_TYPES,
+  SOURCE_CHANNELS,
+} from "../lib/bookings/constants";
 
 const createdAt = () =>
   timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -343,6 +356,10 @@ export const quotations = pgTable(
     blacklistOverrideBy: uuid("blacklist_override_by").references(() => user.id, { onDelete: "set null" }),
     /** Internal; never on the client copy. */
     notes: text("notes"),
+    /** Phase 2a history import: read-only, no engine inputs/result. */
+    imported: boolean("imported").notNull().default(false),
+    /** Logged lines and fields from the old Rental Log (`ImportedQuotationData`). */
+    importedData: jsonb("imported_data"),
     createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -357,6 +374,209 @@ export const quotations = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Phase 2a: bookings, holds, blocks, charges, payments, drivers
+// ---------------------------------------------------------------------------
+
+export {
+  BOOKING_STATUSES,
+  HOLD_KINDS,
+  BLOCK_KINDS,
+  CHARGE_KINDS,
+  CHARGE_SOURCES,
+  PAYMENT_TYPES,
+  PAYMENT_DIRECTIONS,
+  PAYMENT_METHODS,
+  SOURCE_CHANNELS,
+};
+export const bookingStatusEnum = pgEnum("booking_status", BOOKING_STATUSES);
+export const holdKindEnum = pgEnum("hold_kind", HOLD_KINDS);
+export const blockKindEnum = pgEnum("block_kind", BLOCK_KINDS);
+export const chargeKindEnum = pgEnum("charge_kind", CHARGE_KINDS);
+export const chargeSourceEnum = pgEnum("charge_source", CHARGE_SOURCES);
+export const paymentTypeEnum = pgEnum("payment_type", PAYMENT_TYPES);
+export const paymentDirectionEnum = pgEnum("payment_direction", PAYMENT_DIRECTIONS);
+export const paymentMethodEnum = pgEnum("payment_method", PAYMENT_METHODS);
+export const sourceChannelEnum = pgEnum("source_channel", SOURCE_CHANNELS);
+
+/** Postgres `tstzrange`, read and written as its text form (`["…","…")`). */
+const tstzrange = customType<{ data: string; driverData: string }>({
+  dataType: () => "tstzrange",
+});
+
+export const drivers = pgTable(
+  "drivers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    /** E.164 (`+639…`). */
+    phone: text("phone"),
+    active: boolean("active").notNull().default(true),
+    notes: text("notes"),
+    /** `manual` or `import`. */
+    source: text("source").notNull().default("manual"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("drivers_name_lower_idx").on(sql`lower(${t.name})`)],
+);
+
+export const bookings = pgTable(
+  "bookings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** = quotation number (`QTN-2026-929`). */
+    number: text("number").notNull().unique(),
+    quotationId: uuid("quotation_id")
+      .unique()
+      .references(() => quotations.id, { onDelete: "restrict" }),
+    clientId: uuid("client_id").references(() => clients.id, { onDelete: "restrict" }),
+    /** Client name as booked (also the label when no client row matched on import). */
+    clientName: text("client_name"),
+    vehicleId: uuid("vehicle_id").references(() => vehicles.id, { onDelete: "restrict" }),
+    /** Vehicle text from the old log when no vehicle matched on import. */
+    vehicleLabel: text("vehicle_label"),
+    service: serviceEnum("service").notNull(),
+    status: bookingStatusEnum("status").notNull().default("pending_reservation"),
+    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+    destination: text("destination"),
+    deliveryAddress: text("delivery_address"),
+    pickupAddress: text("pickup_address"),
+    driverId: uuid("driver_id").references(() => drivers.id, { onDelete: "set null" }),
+    /** Admin+ override when the assigned driver has an overlapping trip. */
+    driverOverlapReason: text("driver_overlap_reason"),
+    driverNameOnLicense: text("driver_name_on_license"),
+    driversLicenseNo: text("drivers_license_no"),
+    idsPresented: text("ids_presented").array().notNull().default(sql`'{}'::text[]`),
+    passengers: integer("passengers"),
+    luggage: text("luggage"),
+    itinerary: text("itinerary"),
+    sourceChannel: sourceChannelEnum("source_channel"),
+    contactHandle: text("contact_handle"),
+    reworkLink: text("rework_link"),
+    orIssued: boolean("or_issued").notNull().default(false),
+    notes: text("notes"),
+    /** Cancel / no-show reason, import conflict note. */
+    statusNote: text("status_note"),
+    confirmWithoutRfReason: text("confirm_without_rf_reason"),
+    imported: boolean("imported").notNull().default(false),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
+    confirmedBy: uuid("confirmed_by").references(() => user.id, { onDelete: "set null" }),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("bookings_vehicle_start_idx").on(t.vehicleId, t.startAt),
+    index("bookings_status_idx").on(t.status),
+    index("bookings_client_idx").on(t.clientId),
+    index("bookings_start_idx").on(t.startAt),
+    index("bookings_driver_idx").on(t.driverId),
+  ],
+);
+
+export const vehicleBlocks = pgTable(
+  "vehicle_blocks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    vehicleId: uuid("vehicle_id")
+      .notNull()
+      .references(() => vehicles.id, { onDelete: "restrict" }),
+    kind: blockKindEnum("kind").notNull(),
+    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+    reason: text("reason").notNull(),
+    /** Set when the block was removed before it started (its hold is inactive). */
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("vehicle_blocks_vehicle_start_idx").on(t.vehicleId, t.startAt)],
+);
+
+/**
+ * One row per confirmed/released booking and per block (PLAN §6.2).
+ * `period = [start, end + turnaround buffer)`. The exclusion constraint
+ * `vehicle_holds_no_overlap` (raw SQL in 0003) makes double booking impossible.
+ */
+export const vehicleHolds = pgTable(
+  "vehicle_holds",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    vehicleId: uuid("vehicle_id")
+      .notNull()
+      .references(() => vehicles.id, { onDelete: "restrict" }),
+    kind: holdKindEnum("kind").notNull(),
+    bookingId: uuid("booking_id")
+      .unique()
+      .references(() => bookings.id, { onDelete: "cascade" }),
+    blockId: uuid("block_id")
+      .unique()
+      .references(() => vehicleBlocks.id, { onDelete: "cascade" }),
+    period: tstzrange("period").notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check(
+      "vehicle_holds_owner_check",
+      sql`(${t.kind} = 'booking' and ${t.bookingId} is not null and ${t.blockId} is null) or (${t.kind} = 'block' and ${t.blockId} is not null and ${t.bookingId} is null)`,
+    ),
+  ],
+);
+
+export const bookingCharges = pgTable(
+  "booking_charges",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    bookingId: uuid("booking_id")
+      .notNull()
+      .references(() => bookings.id, { onDelete: "cascade" }),
+    kind: chargeKindEnum("kind").notNull(),
+    /** Engine line code when copied from a quotation. */
+    code: text("code"),
+    label: text("label").notNull(),
+    amountCentavos: integer("amount_centavos").notNull(),
+    source: chargeSourceEnum("source").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("booking_charges_booking_idx").on(t.bookingId, t.sortOrder)],
+);
+
+export const payments = pgTable(
+  "payments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    bookingId: uuid("booking_id")
+      .notNull()
+      .references(() => bookings.id, { onDelete: "cascade" }),
+    type: paymentTypeEnum("type").notNull(),
+    direction: paymentDirectionEnum("direction").notNull(),
+    amountCentavos: integer("amount_centavos").notNull(),
+    method: paymentMethodEnum("method").notNull(),
+    reference: text("reference"),
+    collectedByUserId: uuid("collected_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** Free-text collector (e.g. a driver) when not a staff user. */
+    collectedByName: text("collected_by_name"),
+    paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
+    note: text("note"),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidedBy: uuid("voided_by").references(() => user.id, { onDelete: "set null" }),
+    voidReason: text("void_reason"),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("payments_booking_idx").on(t.bookingId, t.paidAt),
+    check("payments_amount_positive", sql`${t.amountCentavos} > 0`),
+  ],
+);
+
 export type UserRow = typeof user.$inferSelect;
 export type QuotationRow = typeof quotations.$inferSelect;
 export type AuditLogRow = typeof auditLog.$inferSelect;
@@ -365,3 +585,9 @@ export type RateCardRow = typeof rateCards.$inferSelect;
 export type HolidayRow = typeof holidays.$inferSelect;
 export type ClientRow = typeof clients.$inferSelect;
 export type ImportRunRow = typeof importRuns.$inferSelect;
+export type BookingRow = typeof bookings.$inferSelect;
+export type VehicleHoldRow = typeof vehicleHolds.$inferSelect;
+export type VehicleBlockRow = typeof vehicleBlocks.$inferSelect;
+export type BookingChargeRow = typeof bookingCharges.$inferSelect;
+export type PaymentRow = typeof payments.$inferSelect;
+export type DriverRow = typeof drivers.$inferSelect;

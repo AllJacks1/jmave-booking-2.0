@@ -6,12 +6,14 @@ import { QuoteDocView } from "@/components/quotes/quote-doc-view";
 import { QuoteStatusBadge } from "@/components/quotes/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { bookingForQuotation } from "@/lib/bookings/queries";
 import { can } from "@/lib/permissions";
 import { fmtDateTime, quoteText } from "@/lib/quotes/document";
 import { requireQuotesPage } from "@/lib/quotes/page";
 import { getQuotation, listVehiclesForQuotes, toDoc } from "@/lib/quotes/service";
 import { getSettings } from "@/lib/settings/service";
 import { QuoteEditor } from "../quote-editor";
+import { ImportedQuote } from "./imported-quote";
 import { QuoteActions } from "./quote-actions";
 
 export const metadata: Metadata = { title: "Quotation" };
@@ -26,7 +28,11 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
   const canOverride = can(user, "quotes.override_blacklist");
 
   // Editable: formal drafts and saved quick estimates.
-  if (q.kind === "quick" || q.status === "draft") {
+  if (q.imported) {
+    return <ImportedQuote q={q} booking={await bookingForQuotation(q.id)} canConvert={can(user, "bookings.manage")} />;
+  }
+
+  if ((q.kind === "quick" || q.status === "draft") && q.form) {
     const vehicles = await listVehiclesForQuotes();
     return (
       <>
@@ -62,6 +68,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
 
   const doc = toDoc(q, settings.business);
   if (!doc) notFound();
+  const booking = await bookingForQuotation(q.id);
 
   return (
     <>
@@ -74,7 +81,15 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
           </span>
         }
       />
-      <QuoteActions id={q.id} status={q.effective} shareToken={q.shareToken} text={quoteText(doc)} />
+      <QuoteActions
+        id={q.id}
+        status={q.effective}
+        shareToken={q.shareToken}
+        text={quoteText(doc)}
+        booking={booking}
+        canConvert={q.kind === "formal" && can(user, "bookings.manage")}
+        hasVehicle={Boolean(q.vehicleId)}
+      />
       {q.effective === "cancelled" && q.statusNote ? (
         <Alert>
           <AlertTitle>Cancelled</AlertTitle>

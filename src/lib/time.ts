@@ -143,3 +143,11 @@ export function formatManilaDate(d: Date | DateKey): string {
 export function formatManilaDateTime(d: Date): string {
   return dateTimeFmt.format(d);
 }
+
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+/** `2026-11-23` → `Mon` (the calendar day itself, no time zone involved). */
+export function weekdayShort(dateKey: DateKey): string {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return WEEKDAYS_SHORT[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+}

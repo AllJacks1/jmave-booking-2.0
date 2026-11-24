@@ -32,6 +32,8 @@ export const PERMISSIONS = {
   // Bookings: create from quotation, edit, confirm, cancel
   "bookings.manage": SALES_UP,
   "bookings.confirm": SALES_UP,
+  // Confirm without a reservation-fee payment, with a reason (Phase 2a brief): Admin and up
+  "bookings.confirm_without_rf": ADMIN_UP,
   // Payments ledger
   "payments.add": SALES_UP,
   "payments.void": ADMIN_UP,
@@ -44,6 +46,8 @@ export const PERMISSIONS = {
   "vehicle_blocks.manage": SALES_UP,
   // Drivers list, driver assignment
   "drivers.manage": SALES_UP,
+  // Assign a driver who already has an overlapping trip (bookings-and-movement.md §8)
+  "drivers.override_overlap": ADMIN_UP,
   // Shift roster
   "roster.view": ALL,
   "roster.edit": ADMIN_UP,
