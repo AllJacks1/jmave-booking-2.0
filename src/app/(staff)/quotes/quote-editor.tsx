@@ -34,6 +34,7 @@ import { fmtPeso, printedLabel, quoteText, sdPayable, totalsFor, type QuoteDoc }
 import type { QuoteFormInput } from "@/lib/quotes/schema";
 import type { PricePreview } from "@/lib/quotes/service";
 import { cn } from "@/lib/utils";
+import { AvailabilityNote } from "@/components/bookings/availability-note";
 import { issueQuotationAction, previewPriceAction, saveDraftAction, saveQuickAction } from "./actions";
 import { ClientPicker, type PickedClient } from "./client-picker";
 
@@ -269,6 +270,7 @@ export function QuoteEditor(props: Props) {
               options={vehicles.map((v) => ({ value: v.id, label: `${v.displayName}${v.plate ? ` · ${v.plate}` : ""}` }))}
               description="Optional until booking."
             />
+            {mode === "formal" && values.vehicleId ? <AvailabilityNote availability={preview?.availability ?? null} /> : null}
             <Choice
               control={control}
               name="bodyType"

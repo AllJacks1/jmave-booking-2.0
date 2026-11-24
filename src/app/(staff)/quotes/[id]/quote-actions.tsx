@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckIcon, ClipboardCopyIcon, FileDownIcon, LinkIcon, PencilIcon, XIcon } from "lucide-react";
+import { CalendarCheckIcon, CalendarPlusIcon, CheckIcon, ClipboardCopyIcon, FileDownIcon, LinkIcon, PencilIcon, XIcon } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { EffectiveStatus } from "@/lib/quotes/document";
+import { convertToBookingAction } from "../../bookings/actions";
 import { markAcceptedAction, markLostAction, reviseQuotationAction } from "../actions";
 
 /** Actions on an issued (read-only) quotation. */
@@ -17,18 +19,27 @@ export function QuoteActions({
   status,
   shareToken,
   text,
+  booking,
+  canConvert,
+  hasVehicle,
+  imported = false,
 }: {
   id: string;
   status: EffectiveStatus;
   shareToken: string | null;
   text: string;
+  booking: { id: string; number: string } | null;
+  canConvert: boolean;
+  hasVehicle: boolean;
+  /** Imported history quotation: no PDF, share link, copy text or revise. */
+  imported?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [lostOpen, setLostOpen] = useState(false);
   const [reason, setReason] = useState("");
   const open = status === "issued";
-  const revisable = status !== "cancelled" && status !== "draft";
+  const revisable = !imported && status !== "cancelled" && status !== "draft";
 
   async function act<T>(f: () => Promise<{ ok: true; data: T } | { ok: false; error: string }>, done: (d: T) => void) {
     setBusy(true);
@@ -45,7 +56,35 @@ export function QuoteActions({
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button asChild>
+      {booking ? (
+        <Button asChild>
+          <Link href={`/bookings/${booking.id}`}>
+            <CalendarCheckIcon />
+            Open booking
+          </Link>
+        </Button>
+      ) : null}
+      {(open || status === "accepted") && canConvert && !booking ? (
+        <Button
+          disabled={busy || !hasVehicle}
+          title={hasVehicle ? undefined : "Revise the quotation and choose a specific vehicle first"}
+          onClick={() =>
+            act(
+              () => convertToBookingAction({ quotationId: id }),
+              (d) => {
+                toast.success(`Booking ${d.number} created`);
+                router.push(`/bookings/${d.id}`);
+              },
+            )
+          }
+        >
+          <CalendarPlusIcon />
+          Convert to booking
+        </Button>
+      ) : null}
+      {imported ? null : (
+        <>
+      <Button asChild variant={booking || (open && canConvert) ? "secondary" : "default"}>
         <a href={`/api/quotations/${id}/pdf`} download>
           <FileDownIcon />
           PDF
@@ -61,6 +100,8 @@ export function QuoteActions({
         <ClipboardCopyIcon />
         Copy text
       </Button>
+        </>
+      )}
       {revisable ? (
         <Button
           variant="outline"

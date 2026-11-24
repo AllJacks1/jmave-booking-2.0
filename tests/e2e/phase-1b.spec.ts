@@ -32,12 +32,13 @@ test("Super Admin imports both workbooks: preview, commit, re-run changes nothin
 
   await signIn(page, OWNER.email, OWNER.password);
   await upload(page, booking);
-  await expect(page.getByText("If you commit now: 14 new")).toBeVisible();
+  // 14 from Phase 1b + 2 drivers + 8 history quotations (Phase 2a).
+  await expect(page.getByText("If you commit now: 24 new")).toBeVisible();
   await expect(page.getByTestId("section-rate_cards")).toContainText("Matches pricing.md");
   await page.screenshot({ path: info.outputPath("import-preview.png"), fullPage: true });
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Commit import" }).click();
-  await expect(page.getByText("Result: 14 new")).toBeVisible();
+  await expect(page.getByText("Result: 24 new")).toBeVisible();
 
   await upload(page, dms);
   page.once("dialog", (d) => d.accept());

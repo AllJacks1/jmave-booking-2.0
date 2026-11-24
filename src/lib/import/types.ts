@@ -6,7 +6,7 @@ import type { RateCardData } from "@/lib/pricing/rate-card";
 import type { BodyType, FuelType } from "@/lib/pricing/types";
 import type { WorkbookKind } from "./workbook";
 
-export const SECTIONS = ["fleet", "rate_cards", "clients", "blacklist", "sequences"] as const;
+export const SECTIONS = ["fleet", "rate_cards", "clients", "blacklist", "sequences", "drivers", "history"] as const;
 export type SectionKey = (typeof SECTIONS)[number];
 
 export const SECTION_LABELS: Record<SectionKey, string> = {
@@ -15,6 +15,8 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   clients: "Clients",
   blacklist: "Blacklist",
   sequences: "Number sequences",
+  drivers: "Drivers",
+  history: "Booking history (quotations and bookings)",
 };
 
 /**
@@ -97,12 +99,44 @@ export type BlacklistImport = {
 
 export type SequenceImport = { key: string; value: number; source: string };
 
+/** `Back bone WDRIVER` M/N. Match key: lower-cased name. */
+export type DriverImport = { row: number; name: string; phone: string | null };
+
+export type HistoryLine = { label: string; amount: number };
+
+/** One `Rental Log` / `WD Rental Log` row (Phase 2a). Match key: `number`. */
+export type HistoryImport = {
+  tab: string;
+  row: number;
+  number: string;
+  service: "self_drive" | "with_driver";
+  /** `Rental Log!AM`; always null for With Driver. */
+  status: "QUOTED" | "BOOKED" | "COMPLETED" | null;
+  bookedOn: string | null;
+  /** ISO instants. */
+  startAt: string | null;
+  endAt: string | null;
+  clientName: string | null;
+  vehicleText: string | null;
+  categoryText: string | null;
+  destination: string | null;
+  sales: string | null;
+  lines: HistoryLine[];
+  total: number | null;
+  reservationFee: number;
+  deposit: number;
+  paymentMethod: "cash" | "gcash" | "card" | "bank" | "other";
+};
+
 export type BookingWorkbookPayload = {
   kind: "booking_workbook";
   fleet: VehicleImport[];
   rateCards: RateCardImport[];
   clients: ClientImport[];
   sequences: SequenceImport[];
+  /** Phase 2a (absent in runs previewed before 2a). */
+  drivers?: DriverImport[];
+  history?: HistoryImport[];
   warnings: ImportWarning[];
 };
 

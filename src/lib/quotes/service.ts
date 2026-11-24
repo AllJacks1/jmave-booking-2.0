@@ -10,6 +10,7 @@ import type { CurrentUser } from "@/lib/auth/session";
 import { nextQuotationNumber } from "@/lib/numbering";
 import { CATEGORY_LABELS, PricingInputError, rateCardDataSchema, type BodyType, type Category, type RateCardData } from "@/lib/pricing";
 import { searchClients } from "@/lib/clients/service";
+import { checkAvailability, type Availability } from "@/lib/bookings/availability";
 import { holidayDates } from "@/lib/rates/service";
 import { getSettings } from "@/lib/settings/service";
 import { addDaysToKey, manilaToUtc, startOfManilaDay } from "@/lib/time";
@@ -147,6 +148,8 @@ export type PricePreview = {
   clientIsRepeat: boolean | null;
   vehicleLabel: string | null;
   client: { id: string; fullName: string; isBlacklisted: boolean; blacklistReason: string | null; isRepeat: boolean; clientType: string } | null;
+  /** Formal quotations with a specific vehicle: is it free for the priced window? */
+  availability: Availability | null;
 };
 
 export const previewPrice = defineAction({
@@ -156,7 +159,10 @@ export const previewPrice = defineAction({
     const l = await loadContext(db, form);
     const { priced, error } = tryPrice(form, l);
     const { bodyType, category } = priced ?? { bodyType: l.vehicle?.bodyType ?? form.bodyType, category: form.category };
+    const availability =
+      priced && l.vehicle ? await checkAvailability(db, { vehicleId: l.vehicle.id, startAt: priced.startAt, endAt: priced.endAt }) : null;
     return {
+      availability,
       error,
       result: priced?.result ?? null,
       startAt: priced?.startAt.toISOString() ?? null,
@@ -329,6 +335,7 @@ export const reviseQuotation = defineAction({
       if (src.kind !== "formal" || src.status === "draft" || src.status === "cancelled") {
         throw new ActionError(409, "Only issued quotations can be revised.");
       }
+      if (src.imported) throw new ActionError(409, "Imported quotations cannot be revised. Make a new quotation instead.");
       const [existing] = await tx
         .select({ id: quotations.id })
         .from(quotations)
@@ -412,7 +419,8 @@ export const updateNotes = defineAction({
 export type QuotationView = QuotationRow & {
   effective: EffectiveStatus;
   consultantName: string | null;
-  form: QuoteForm;
+  /** Null for imported history quotations (no form inputs). */
+  form: QuoteForm | null;
   revisedFromNumber: string | null;
   revisedById: string | null;
   client: { id: string; fullName: string; isBlacklisted: boolean; blacklistReason: string | null; firstRentalAt: Date | null; clientType: "individual" | "corporate" } | null;
@@ -444,7 +452,7 @@ async function toView(row: QuotationRow): Promise<QuotationView> {
     ...row,
     effective: effectiveStatus(row),
     consultantName: consultant[0]?.displayName ?? null,
-    form: quoteFormSchema.parse(row.inputs),
+    form: row.imported ? null : quoteFormSchema.parse(row.inputs),
     revisedFromNumber: revisedFrom[0]?.number ?? null,
     revisedById: revisedBy[0]?.id ?? null,
     client: client[0] ?? null,

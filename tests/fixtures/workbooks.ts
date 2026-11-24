@@ -181,6 +181,13 @@ export async function bookingWorkbook(opts: FixtureOptions = {}): Promise<Buffer
   bb.getCell("J3").value = "VAN";
 
   const bbw = wb.addWorksheet("Back bone WDRIVER");
+  // Drivers (M name, N contact): invented.
+  bbw.getCell("M1").value = "Drivers Name";
+  bbw.getCell("N1").value = "Cont Number";
+  bbw.getCell("M2").value = "Dario Driverson";
+  bbw.getCell("N2").value = 9170001111;
+  bbw.getCell("M3").value = "Wendy Wheel";
+  bbw.getCell("N3").value = "n/a";
   const ehr = [["Sedan", "sedan"], ["Compact", "compact"], ["MGZ", null], ["MPV", "mpv"], ["SUV", "suv"], ["Pick-up", "pickup"], ["VAN", "van"], ["Wagon", "wagon"]] as const;
   ehr.forEach(([label, b], i) => {
     bbw.getCell(`Q${2 + i}`).value = label;
