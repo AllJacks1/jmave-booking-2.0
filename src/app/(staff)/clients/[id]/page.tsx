@@ -21,6 +21,8 @@ import { can } from "@/lib/permissions";
 import { formatPhPhone } from "@/lib/phone";
 import { formatManilaDate, formatManilaDateTime } from "@/lib/time";
 import { BlacklistBadge, RepeatBadge } from "../client-badges";
+import { LoyaltySummary } from "@/components/rewards/loyalty-summary";
+import { accountForClient } from "@/lib/loyalty/service";
 import { BlacklistControl } from "./blacklist-control";
 
 export const metadata: Metadata = { title: "Client" };
@@ -38,7 +40,8 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const c = await getClient(id);
   if (!c) notFound();
-  const history = await clientHistory(c.id);
+  const canRewards = can(user, "rewards.view");
+  const [history, loyalty] = await Promise.all([clientHistory(c.id), canRewards ? accountForClient(c.id) : Promise.resolve(null)]);
   const canBookings = can(user, "bookings.manage");
   const canQuotes = can(user, "quotes.manage");
 
@@ -109,6 +112,35 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
             </dl>
           </CardContent>
         </Card>
+        {canRewards ? (
+          <Card data-testid="client-rewards">
+            <CardHeader>
+              <CardTitle>Rewards</CardTitle>
+              {loyalty ? (
+                <CardDescription>
+                  <Link href={`/rewards/${loyalty.account.id}`} className="underline-offset-4 hover:underline">
+                    Open card and history
+                  </Link>
+                </CardDescription>
+              ) : null}
+            </CardHeader>
+            <CardContent>
+              {loyalty ? (
+                <LoyaltySummary
+                  cardNo={loyalty.account.cardNo}
+                  memberSince={loyalty.account.memberSince}
+                  expiresAt={loyalty.account.expiresAt}
+                  expired={loyalty.expired}
+                  tier={loyalty.account.tier}
+                  balance={loyalty.balance}
+                  href={`/rewards/${loyalty.account.id}`}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">No loyalty card yet. It is created when this client’s first booking is returned.</p>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
       <Card>
         <CardHeader>

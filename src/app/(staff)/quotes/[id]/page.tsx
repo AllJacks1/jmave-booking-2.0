@@ -9,11 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bookingForQuotation } from "@/lib/bookings/queries";
 import { can } from "@/lib/permissions";
 import { fmtDateTime, quoteText } from "@/lib/quotes/document";
+import { quotationDeliveries } from "@/lib/quotes/email";
 import { requireQuotesPage } from "@/lib/quotes/page";
 import { getQuotation, listVehiclesForQuotes, toDoc } from "@/lib/quotes/service";
 import { getSettings } from "@/lib/settings/service";
 import { QuoteEditor } from "../quote-editor";
 import { ImportedQuote } from "./imported-quote";
+import { DeliveriesCard, SendEmailButton } from "./email";
 import { QuoteActions } from "./quote-actions";
 
 export const metadata: Metadata = { title: "Quotation" };
@@ -59,6 +61,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
           }
           canOverrideBlacklist={canOverride}
           businessName={settings.business.name}
+          canRedeem={can(user, "rewards.redeem")}
           validUntil={q.validUntil?.toISOString() ?? null}
           revisedFromNumber={q.revisedFromNumber}
         />
@@ -68,7 +71,8 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
 
   const doc = toDoc(q, settings.business);
   if (!doc) notFound();
-  const booking = await bookingForQuotation(q.id);
+  const [booking, deliveries] = await Promise.all([bookingForQuotation(q.id), q.kind === "formal" ? quotationDeliveries(q.id) : Promise.resolve([])]);
+  const emailable = q.kind === "formal" && (q.effective === "issued" || q.effective === "accepted");
 
   return (
     <>
@@ -89,6 +93,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
         booking={booking}
         canConvert={q.kind === "formal" && can(user, "bookings.manage")}
         hasVehicle={Boolean(q.vehicleId)}
+        extra={emailable ? <SendEmailButton id={q.id} defaultTo={q.client?.email ?? ""} /> : null}
       />
       {q.effective === "cancelled" && q.statusNote ? (
         <Alert>
@@ -142,6 +147,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
           </CardContent>
         </Card>
       </div>
+      {deliveries.length ? <DeliveriesCard deliveries={deliveries} /> : null}
     </>
   );
 }

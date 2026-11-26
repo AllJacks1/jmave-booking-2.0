@@ -37,7 +37,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/quotes", label: "Quotations", icon: "quotes", permission: "quotes.manage", group: "work" },
   { href: "/bookings", label: "Bookings", icon: "bookings", permission: "bookings.manage", group: "work" },
   { href: "/clients", label: "Clients", icon: "clients", permission: "clients.view", group: "work" },
-  { href: "/rewards", label: "Rewards", icon: "rewards", permission: "rewards.view", comingIn: "3", group: "work" },
+  { href: "/rewards", label: "Rewards", icon: "rewards", permission: "rewards.view", group: "work" },
   { href: "/board", label: "Movement board", icon: "board", permission: "board.view", group: "operations" },
   { href: "/calendar", label: "Calendar", icon: "calendar", permission: "calendar.view", group: "operations" },
   { href: "/roster", label: "Roster", icon: "roster", permission: "roster.view", group: "operations" },

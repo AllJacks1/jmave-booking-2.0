@@ -18,3 +18,4 @@ export {
 } from "./with-driver";
 export * from "./check-in";
 export { selfDriveSchedule, otSlotAt, otSlotFor, withDriverWindow, type SelfDriveSchedule, type WithDriverWindow } from "./schedule";
+export * from "./rewards";

@@ -23,6 +23,7 @@ export function QuoteActions({
   canConvert,
   hasVehicle,
   imported = false,
+  extra,
 }: {
   id: string;
   status: EffectiveStatus;
@@ -33,6 +34,8 @@ export function QuoteActions({
   hasVehicle: boolean;
   /** Imported history quotation: no PDF, share link, copy text or revise. */
   imported?: boolean;
+  /** More buttons (e.g. Send by email). */
+  extra?: React.ReactNode;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -102,6 +105,7 @@ export function QuoteActions({
       </Button>
         </>
       )}
+      {extra}
       {revisable ? (
         <Button
           variant="outline"

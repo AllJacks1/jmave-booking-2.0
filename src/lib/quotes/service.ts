@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, gte, ilike, inArray, lt, or, sql, type SQL } from "drizzle-orm";
 import { db, type DbOrTx } from "@/db/client";
-import { clients, quotations, rateCards, user, vehicles, type QuotationRow } from "@/db/schema";
+import { clients, loyaltyAccounts, quotations, rateCards, user, vehicles, type QuotationRow } from "@/db/schema";
 import { ActionError, defineAction } from "@/lib/actions";
 import { withAudit } from "@/lib/audit";
 import { can } from "@/lib/permissions";
@@ -13,7 +13,8 @@ import { searchClients } from "@/lib/clients/service";
 import { checkAvailability, type Availability } from "@/lib/bookings/availability";
 import { holidayDates } from "@/lib/rates/service";
 import { getSettings } from "@/lib/settings/service";
-import { addDaysToKey, manilaToUtc, startOfManilaDay } from "@/lib/time";
+import { balanceOf, checkRedeemable, isExpired } from "@/lib/loyalty/ledger";
+import { addDaysToKey, manilaDateKey, manilaToUtc, startOfManilaDay } from "@/lib/time";
 import {
   bodyLabel,
   effectiveStatus,
@@ -23,7 +24,7 @@ import {
   type QuoteDoc,
   type QuoteSnapshot,
 } from "./document";
-import { priceQuote, type PricedQuote, type QuoteResult } from "./engine";
+import { priceQuote, redemptionOf, type PricedQuote, type QuoteResult } from "./engine";
 import {
   issueSchema,
   markLostSchema,
@@ -150,7 +151,19 @@ export type PricePreview = {
   client: { id: string; fullName: string; isBlacklisted: boolean; blacklistReason: string | null; isRepeat: boolean; clientType: string } | null;
   /** Formal quotations with a specific vehicle: is it free for the priced window? */
   availability: Availability | null;
+  /** The client's loyalty card (for redemption), and why the redemption cannot be issued. */
+  loyalty: LoyaltySummary | null;
+  rewardsProblem: string | null;
 };
+
+export type LoyaltySummary = { cardNo: string; balance: number; expiresAt: string; expired: boolean };
+
+async function loyaltySummary(executor: DbOrTx, clientId: string | null): Promise<LoyaltySummary | null> {
+  if (!clientId) return null;
+  const [a] = await executor.select().from(loyaltyAccounts).where(eq(loyaltyAccounts.clientId, clientId));
+  if (!a) return null;
+  return { cardNo: a.cardNo, balance: await balanceOf(executor, a.id), expiresAt: a.expiresAt, expired: isExpired(a, manilaDateKey(new Date())) };
+}
 
 export const previewPrice = defineAction({
   permission: "quotes.manage",
@@ -161,8 +174,14 @@ export const previewPrice = defineAction({
     const { bodyType, category } = priced ?? { bodyType: l.vehicle?.bodyType ?? form.bodyType, category: form.category };
     const availability =
       priced && l.vehicle ? await checkAvailability(db, { vehicleId: l.vehicle.id, startAt: priced.startAt, endAt: priced.endAt }) : null;
+    const [loyalty, rewardsProblem] = await Promise.all([
+      loyaltySummary(db, form.clientId),
+      priced ? checkRedeemable(db, form.clientId, redemptionOf(priced.result)) : Promise.resolve(null),
+    ]);
     return {
       availability,
+      loyalty,
+      rewardsProblem,
       error,
       result: priced?.result ?? null,
       startAt: priced?.startAt.toISOString() ?? null,
@@ -192,10 +211,16 @@ async function validityHours(executor: DbOrTx) {
   return (await getSettings(executor)).quote_validity_hours;
 }
 
+/** Estimates never redeem points (only formal quotations do, Phase 3 brief §6). */
+function withoutRewards(form: QuoteForm): QuoteForm {
+  return { ...form, rewardsMode: "none", rewardsPoints: 0, rewardsHours: 0 };
+}
+
 export const saveQuick = defineAction({
   permission: "quotes.manage",
   input: saveQuickSchema,
-  handler: async (actor, { id, form }) => {
+  handler: async (actor, { id, form: raw }) => {
+    const form = withoutRewards(raw);
     return db.transaction(async (tx) => {
       const l = await loadContext(tx, form);
       const { priced, error } = tryPrice(form, l);
@@ -283,6 +308,14 @@ export const issueQuotation = defineAction({
       const { priced, error } = tryPrice(form, l);
       if (!priced) throw new ActionError(400, error ?? "This quotation does not price.");
 
+      // Rewards (Sales+): card must exist, not be expired, and cover the points.
+      const redemption = redemptionOf(priced.result);
+      if (redemption) {
+        if (!can(actor, "rewards.redeem")) throw new ActionError(403, "You cannot redeem rewards.");
+        const problem = await checkRedeemable(tx, form.clientId, redemption);
+        if (problem) throw new ActionError(409, problem, { rewardsMode: [problem] });
+      }
+
       const now = new Date();
       const validUntil = new Date(now.getTime() + (await validityHours(tx)) * 3_600_000);
       const number = await nextQuotationNumber(tx, form.service, now);
@@ -308,7 +341,7 @@ export const issueQuotation = defineAction({
         "quotation",
         id,
         { status: "draft" },
-        { number, total: priced.total, rateCardId: l.card.id, validUntil: validUntil.toISOString(), blacklistOverride: override?.reason ?? null },
+        { number, total: priced.total, rateCardId: l.card.id, validUntil: validUntil.toISOString(), blacklistOverride: override?.reason ?? null, rewards: redemption },
         tx,
       );
 
@@ -368,10 +401,12 @@ export const reviseQuotation = defineAction({
   },
 });
 
-async function lockIssued(tx: DbOrTx, id: string) {
+/** An issued quotation; `allowExpired` also accepts one the nightly job marked expired. */
+async function lockIssued(tx: DbOrTx, id: string, allowExpired = false) {
   const [cur] = await tx.select().from(quotations).where(eq(quotations.id, id)).for("update");
   if (!cur) throw new ActionError(404, "Quotation not found.");
-  if (cur.kind !== "formal" || cur.status !== "issued") throw new ActionError(409, "Only issued quotations can change status.");
+  const ok = cur.status === "issued" || (allowExpired && cur.status === "expired");
+  if (cur.kind !== "formal" || !ok) throw new ActionError(409, "Only issued quotations can change status.");
   return cur;
 }
 
@@ -380,9 +415,9 @@ export const markLost = defineAction({
   input: markLostSchema,
   handler: async (actor, { id, reason }) => {
     return db.transaction(async (tx) => {
-      await lockIssued(tx, id);
+      const cur = await lockIssued(tx, id, true);
       await tx.update(quotations).set({ status: "lost", statusNote: reason }).where(eq(quotations.id, id));
-      await withAudit(actor, "quotation.lost", "quotation", id, { status: "issued" }, { status: "lost", statusNote: reason }, tx);
+      await withAudit(actor, "quotation.lost", "quotation", id, { status: cur.status }, { status: "lost", statusNote: reason }, tx);
       return { id };
     });
   },
@@ -423,7 +458,7 @@ export type QuotationView = QuotationRow & {
   form: QuoteForm | null;
   revisedFromNumber: string | null;
   revisedById: string | null;
-  client: { id: string; fullName: string; isBlacklisted: boolean; blacklistReason: string | null; firstRentalAt: Date | null; clientType: "individual" | "corporate" } | null;
+  client: { id: string; fullName: string; isBlacklisted: boolean; blacklistReason: string | null; firstRentalAt: Date | null; clientType: "individual" | "corporate"; email: string | null } | null;
   rateCardVersion: number | null;
   overrideByName: string | null;
 };
@@ -439,7 +474,7 @@ async function toView(row: QuotationRow): Promise<QuotationView> {
     row.consultantId ? db.select({ displayName: user.displayName }).from(user).where(eq(user.id, row.consultantId)) : Promise.resolve([]),
     row.clientId
       ? db
-          .select({ id: clients.id, fullName: clients.fullName, isBlacklisted: clients.isBlacklisted, blacklistReason: clients.blacklistReason, firstRentalAt: clients.firstRentalAt, clientType: clients.clientType })
+          .select({ id: clients.id, fullName: clients.fullName, isBlacklisted: clients.isBlacklisted, blacklistReason: clients.blacklistReason, firstRentalAt: clients.firstRentalAt, clientType: clients.clientType, email: clients.email })
           .from(clients)
           .where(eq(clients.id, row.clientId))
       : Promise.resolve([]),

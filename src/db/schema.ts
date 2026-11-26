@@ -656,6 +656,112 @@ export const shiftAssignments = pgTable(
   (t) => [uniqueIndex("shift_assignments_date_user_idx").on(t.date, t.userId)],
 );
 
+// ---------------------------------------------------------------------------
+// Phase 3: loyalty, outbox
+// ---------------------------------------------------------------------------
+
+export const LOYALTY_STATUSES = ["active", "expired"] as const;
+export type LoyaltyStatus = (typeof LOYALTY_STATUSES)[number];
+export const loyaltyStatusEnum = pgEnum("loyalty_status", LOYALTY_STATUSES);
+
+/**
+ * `earn` / `reversal` (a reverted return), `redeem` / `refund` (a cancelled
+ * booking), `adjust` (manual, Admin+), `import` (Loyalty Log). Points signed.
+ */
+export const POINTS_KINDS = ["earn", "reversal", "redeem", "refund", "adjust", "import"] as const;
+export type PointsKind = (typeof POINTS_KINDS)[number];
+export const pointsKindEnum = pgEnum("points_kind", POINTS_KINDS);
+
+/**
+ * One loyalty card per client. `client_id` is null only for imported cards
+ * that matched no client (linked later on /rewards).
+ */
+export const loyaltyAccounts = pgTable(
+  "loyalty_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .unique()
+      .references(() => clients.id, { onDelete: "restrict" }),
+    /** `JMV-0001`. */
+    cardNo: text("card_no").notNull().unique(),
+    /** Manila dates. */
+    memberSince: date("member_since", { mode: "string" }).notNull(),
+    expiresAt: date("expires_at", { mode: "string" }).notNull(),
+    tier: integer("tier"),
+    status: loyaltyStatusEnum("status").notNull().default("active"),
+    /** Imported cards: the client name seen in the workbook (shown until linked). */
+    importedName: text("imported_name"),
+    imported: boolean("imported").notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [check("loyalty_accounts_tier_range", sql`${t.tier} is null or ${t.tier} between 0 and 99`)],
+);
+
+export const pointsLedger = pgTable(
+  "points_ledger",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => loyaltyAccounts.id, { onDelete: "cascade" }),
+    bookingId: uuid("booking_id").references(() => bookings.id, { onDelete: "set null" }),
+    quotationId: uuid("quotation_id").references(() => quotations.id, { onDelete: "set null" }),
+    kind: pointsKindEnum("kind").notNull(),
+    points: integer("points").notNull(),
+    note: text("note"),
+    /** Imports: stable row key so a re-run adds nothing. */
+    importKey: text("import_key").unique(),
+    /** When it happened (imports: the rental date). */
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("points_ledger_account_idx").on(t.accountId, t.occurredAt),
+    index("points_ledger_booking_idx").on(t.bookingId),
+    check("points_ledger_nonzero", sql`${t.points} <> 0`),
+  ],
+);
+
+export const OUTBOX_KINDS = ["rework_lead", "email"] as const;
+export type OutboxKind = (typeof OUTBOX_KINDS)[number];
+export const outboxKindEnum = pgEnum("outbox_kind", OUTBOX_KINDS);
+export const OUTBOX_STATUSES = ["pending", "sent", "failed"] as const;
+export type OutboxStatus = (typeof OUTBOX_STATUSES)[number];
+export const outboxStatusEnum = pgEnum("outbox_status", OUTBOX_STATUSES);
+
+/**
+ * External calls (PLAN §6.6). A request writes a row inside its transaction;
+ * the worker sends it with retries (exponential backoff, max 8 attempts).
+ */
+export const outbox = pgTable(
+  "outbox",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: outboxKindEnum("kind").notNull(),
+    payload: jsonb("payload").notNull(),
+    status: outboxStatusEnum("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    lastError: text("last_error"),
+    response: jsonb("response"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    /** Not before this time (backoff). */
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    /** What the row is about, e.g. `quotation` + id (delivery status on the page). */
+    entity: text("entity"),
+    entityId: uuid("entity_id"),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("outbox_due_idx").on(t.nextAttemptAt).where(sql`${t.status} = 'pending'`),
+    index("outbox_entity_idx").on(t.entity, t.entityId),
+  ],
+);
+
 export type UserRow = typeof user.$inferSelect;
 export type QuotationRow = typeof quotations.$inferSelect;
 export type AuditLogRow = typeof auditLog.$inferSelect;
@@ -673,3 +779,6 @@ export type DriverRow = typeof drivers.$inferSelect;
 export type MovementEventRow = typeof movementEvents.$inferSelect;
 export type ShiftTemplateRow = typeof shiftTemplates.$inferSelect;
 export type ShiftAssignmentRow = typeof shiftAssignments.$inferSelect;
+export type LoyaltyAccountRow = typeof loyaltyAccounts.$inferSelect;
+export type PointsLedgerRow = typeof pointsLedger.$inferSelect;
+export type OutboxRow = typeof outbox.$inferSelect;

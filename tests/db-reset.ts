@@ -22,7 +22,7 @@ export async function resetDatabase(url: string) {
   const sql = postgres(url, { max: 1, onnotice: () => {} });
   try {
     await sql.unsafe(
-      `DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS drizzle CASCADE; CREATE SCHEMA public;`,
+      `DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS drizzle CASCADE; DROP SCHEMA IF EXISTS pgboss CASCADE; CREATE SCHEMA public;`,
     );
     await migrate(drizzle(sql), { migrationsFolder: "src/db/migrations" });
   } finally {

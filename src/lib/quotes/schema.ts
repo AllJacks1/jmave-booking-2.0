@@ -13,6 +13,7 @@ import {
   OT_SLOTS,
   PAYMENT_METHODS,
   PRICING_BASES,
+  REWARDS_MODES,
   SD_PROMOS,
   SERVICE_AREAS,
   SERVICES,
@@ -96,6 +97,11 @@ export const quoteFormSchema = z.object({
   itinerary: text(2000),
   driverName: text(160),
   driverContact: text(60),
+
+  // Rewards (formal quotations, pricing.md §4)
+  rewardsMode: z.enum(REWARDS_MODES).default("none"),
+  rewardsPoints: z.number().int("Whole points").min(0, "Cannot be negative").max(100_000_000).default(0),
+  rewardsHours: z.number().int("Whole hours").min(0, "Cannot be negative").max(240).default(0),
 });
 
 export type QuoteFormInput = z.input<typeof quoteFormSchema>;

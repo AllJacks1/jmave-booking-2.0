@@ -15,6 +15,7 @@ import {
   type FuelType,
   type OtSlot,
   type RateCardData,
+  type RewardsRedemption,
   type SelfDriveInput,
   type SelfDriveResult,
   type WithDriverInput,
@@ -58,6 +59,16 @@ export function resolveBody(form: Pick<QuoteForm, "bodyType" | "category">, vehi
   return { bodyType, category };
 }
 
+/** Rewards fields (the quotation service clears them on quick quotations). */
+function rewardsInput(form: QuoteForm) {
+  return { rewardsMode: form.rewardsMode, rewardsPoints: form.rewardsPoints, rewardsHours: form.rewardsHours };
+}
+
+/** Redemption of a stored result (results saved before Phase 3 have none). */
+export function redemptionOf(result: QuoteResult | null | undefined): RewardsRedemption | null {
+  return result?.rewards ?? null;
+}
+
 /** Price a form. Throws `PricingInputError` for input the engine rejects. */
 export function priceQuote(form: QuoteForm, ctx: QuoteContext): PricedQuote {
   const { bodyType, category } = resolveBody(form, ctx.vehicle);
@@ -96,6 +107,7 @@ export function priceQuote(form: QuoteForm, ctx: QuoteContext): PricedQuote {
       reservationFee: form.reservationFee,
       deposit: form.deposit,
       paymentMethods: { rental: form.rentalMethod, reservation: form.reservationMethod, deposit: form.depositMethod },
+      ...rewardsInput(form),
     };
     const result = priceSelfDrive(input, ctx.card, pricingCtx);
     return {
@@ -135,6 +147,7 @@ export function priceQuote(form: QuoteForm, ctx: QuoteContext): PricedQuote {
     reservationFee: form.reservationFee,
     discount: form.discount,
     paymentMethods: { rental: form.rentalMethod, reservation: form.reservationMethod },
+    ...rewardsInput(form),
   };
   const result = priceWithDriver(input, ctx.card, pricingCtx);
   return {

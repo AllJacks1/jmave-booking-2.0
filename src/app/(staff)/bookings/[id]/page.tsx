@@ -20,6 +20,9 @@ import { BookingActions } from "./booking-actions";
 import { ChargesCard, PaymentsCard } from "./ledger-cards";
 import { DetailsForm, DriverAssign, ScheduleForm } from "./booking-forms";
 import { ExtendDialog } from "./extend-dialog";
+import { UndoReturnButton } from "./undo-return";
+import { bookingPoints } from "@/lib/loyalty/service";
+import { POINTS_KIND_LABELS } from "@/lib/loyalty/schema";
 import { Button } from "@/components/ui/button";
 import { fuelText } from "@/lib/check-in/format";
 
@@ -32,11 +35,12 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const v = await getBookingView(id);
   if (!v) notFound();
   const b = v.booking;
-  const [vehicles, staff, driverList, movements] = await Promise.all([
+  const [vehicles, staff, driverList, movements, points] = await Promise.all([
     listVehiclesForQuotes(),
     staffOptions(),
     b.service === "with_driver" ? listDrivers({ activeOnly: true }) : Promise.resolve([]),
     bookingMovements(b.id),
+    can(user, "rewards.view") ? bookingPoints(b.id) : Promise.resolve([]),
   ]);
   const clientName = v.client?.fullName ?? b.clientName;
   const codes = movementCodes(b);
@@ -72,6 +76,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             <Link href={`/board/return/${b.id}`}>Return check-in</Link>
           </Button>
         ) : null}
+        {b.status === "returned" && can(user, "movement.undo_return") ? <UndoReturnButton bookingId={b.id} /> : null}
         {b.status === "confirmed" || b.status === "released" ? (
           <ExtendDialog bookingId={b.id} endDate={manilaDateKey(b.endAt)} endTime={manilaTime(b.endAt)} endText={fmtDateTime(b.endAt)} />
         ) : null}
@@ -89,6 +94,22 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             {v.availability.state === "booked"
               ? "Confirming will be refused until the other booking or block moves."
               : "Pending reservations do not hold the car. Whoever confirms first gets it."}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {points.length ? (
+        <Alert data-testid="booking-points">
+          <AlertTitle>Rewards</AlertTitle>
+          <AlertDescription>
+            {points.map((p, i) => (
+              <span key={i} className="block">
+                {POINTS_KIND_LABELS[p.kind]}: {p.points > 0 ? "+" : ""}
+                {p.points.toLocaleString("en-PH")} points on{" "}
+                <Link href={`/rewards/${p.accountId}`} className="underline">
+                  {p.cardNo}
+                </Link>
+              </span>
+            ))}
           </AlertDescription>
         </Alert>
       ) : null}

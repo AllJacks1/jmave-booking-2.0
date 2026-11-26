@@ -14,6 +14,7 @@ import {
 } from "./common";
 import { selfDriveInputSchema, type SelfDriveInput, type SelfDriveParsed } from "./inputs";
 import { applyBps, remarkNumber, remarkPesos } from "./math";
+import { rewardsLines, type RewardsRedemption } from "./rewards";
 import type { RateCardData } from "./rate-card";
 import { BODY_TYPE_LABELS, rateKeyFor, type PriceLine, type PricingContext } from "./types";
 
@@ -39,6 +40,8 @@ export type SelfDriveResult = {
   /** Rental total = subtotal + discounts (discounts are negative). */
   total: number;
   payable: SelfDrivePayable;
+  /** Points redemption (pricing.md §4); deducted when the booking is confirmed. */
+  rewards: RewardsRedemption | null;
   warnings: string[];
 };
 
@@ -164,6 +167,15 @@ export function priceSelfDrive(
     total = 0;
   }
 
+  // Rewards (pricing.md §4): never below ₱0.
+  const rw = rewardsLines(card, input.bodyType, input, total);
+  if (rw.line) lines.push(rw.line);
+  if (rw.discount) {
+    discounts.push(rw.discount);
+    total += rw.discount.amount;
+  }
+  warnings.push(...rw.warnings);
+
   // Payable block
   const m = input.paymentMethods;
   const terminalFees = {
@@ -191,6 +203,7 @@ export function priceSelfDrive(
       totalContractValue,
       balanceOnRelease: totalContractValue - dueToday,
     },
+    rewards: rw.redemption,
     warnings,
   };
 }

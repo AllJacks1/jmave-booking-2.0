@@ -48,5 +48,11 @@ export const extensionSchema = z.object({
 });
 export type ExtensionInput = z.input<typeof extensionSchema>;
 
+export const undoReturnSchema = z.object({
+  bookingId: z.uuid(),
+  reason: z.string().trim().min(1, "Give a reason").max(1000, "At most 1,000 characters"),
+});
+export type UndoReturnInput = z.input<typeof undoReturnSchema>;
+
 /** Check-ins may not be dated in the future beyond this (clock drift, typing). */
 export const FUTURE_TOLERANCE_MINUTES = 15;

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/session";
 import type { ClientInput } from "@/lib/clients/schema";
 import { createClient } from "@/lib/clients/service";
+import { sendQuotationEmail, type SendEmailInput } from "@/lib/quotes/email";
 import type { QuoteFormInput } from "@/lib/quotes/schema";
 import {
   issueQuotation,
@@ -63,4 +64,10 @@ export async function searchClientsAction(q: string) {
 
 export async function createClientInlineAction(input: ClientInput) {
   return createClient(await getCurrentUser(), input);
+}
+
+export async function sendQuotationEmailAction(input: SendEmailInput) {
+  const r = await sendQuotationEmail(await getCurrentUser(), input);
+  if (r.ok) revalidatePath(`/quotes/${input.id}`);
+  return r;
 }

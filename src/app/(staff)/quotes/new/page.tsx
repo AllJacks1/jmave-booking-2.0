@@ -46,6 +46,7 @@ export default async function NewQuotePage({ searchParams }: { searchParams: Pro
           initialClient={null}
           canOverrideBlacklist={can(user, "quotes.override_blacklist")}
           businessName={settings.business.name}
+          canRedeem={can(user, "rewards.redeem")}
         />
       )}
     </>

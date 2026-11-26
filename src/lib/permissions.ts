@@ -44,6 +44,8 @@ export const PERMISSIONS = {
   "board.view": ALL,
   // Release / Return check-in (actual time, odometer, fuel)
   "movement.check_in": ALL,
+  // Undo a recorded return (with a reason) — reverses its charges and points (Phase 3)
+  "movement.undo_return": ADMIN_UP,
   // Vehicle blocks (owner use, maintenance)
   "vehicle_blocks.manage": SALES_UP,
   // Drivers list, driver assignment
@@ -57,6 +59,8 @@ export const PERMISSIONS = {
   "rewards.view": SALES_UP,
   "rewards.redeem": SALES_UP,
   "rewards.adjust": ADMIN_UP,
+  // Loyalty tier is editable by Super Admin (PLAN §8 Q5)
+  "rewards.edit_tier": SA,
   // Fleet (vehicles): Super Admin edits, Admin read-only
   "fleet.view": ADMIN_UP,
   "fleet.edit": SA,

@@ -1,0 +1,11 @@
+{
+  // The worker runs under tsx, outside Next. `server-only` throws outside a
+  // React Server bundle, so it maps to an empty module here (as in Vitest).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "server-only": ["./src/worker/server-only-stub.ts"]
+    }
+  }
+}

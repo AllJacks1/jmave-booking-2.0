@@ -4,6 +4,7 @@
  * Optional inputs have defaults so blank form fields price cleanly.
  */
 import { z } from "zod";
+import { rewardsInputShape } from "./rewards";
 import { BODY_TYPES, CATEGORIES, FUEL_TYPES, PAYMENT_METHODS, SERVICE_AREAS } from "./types";
 
 const centavos = z.number().int("Whole centavos only").min(0, "Cannot be negative").max(1_000_000_000);
@@ -68,6 +69,7 @@ export const selfDriveInputSchema = z.object({
   paymentMethods: z
     .object({ rental: method, reservation: method, deposit: method })
     .default({ rental: "cash", reservation: "cash", deposit: "cash" }),
+  ...rewardsInputShape,
 });
 export type SelfDriveInput = z.input<typeof selfDriveInputSchema>;
 export type SelfDriveParsed = z.output<typeof selfDriveInputSchema>;
@@ -124,6 +126,7 @@ export const withDriverInputSchema = z.object({
   paymentMethods: z
     .object({ rental: method, reservation: method })
     .default({ rental: "cash", reservation: "cash" }),
+  ...rewardsInputShape,
 });
 export type WithDriverInput = z.input<typeof withDriverInputSchema>;
 export type WithDriverParsed = z.output<typeof withDriverInputSchema>;

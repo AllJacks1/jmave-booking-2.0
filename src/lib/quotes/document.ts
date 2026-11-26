@@ -31,7 +31,7 @@ export const STATUS_LABELS: Record<EffectiveStatus, string> = {
   cancelled: "Cancelled",
 };
 
-/** `expired` is computed on read: issued and past `valid_until` (a nightly job comes in Phase 3). */
+/** `expired` is computed on read (issued and past `valid_until`) and also stored by the nightly job (Phase 3). */
 export function effectiveStatus(
   row: { status: EffectiveStatus; validUntil: Date | null },
   now: Date = new Date(),

@@ -12,6 +12,7 @@ import { clients, drivers, numberSequences, quotations, rateCards, vehicles, typ
 import { withAudit } from "@/lib/audit";
 import { addToIndex, indexClients, matchClient, type ClientIndex } from "./client-match";
 import { activeHoldsByVehicle, bufferMinutesOrDefault, planDrivers, planHistory } from "./history-plan";
+import { planLoyalty } from "./loyalty-plan";
 import { diffRateCards } from "@/lib/pricing/rate-card";
 import type {
   BlacklistImport,
@@ -404,6 +405,14 @@ export async function planImport(payload: ImportPayload, db: DbOrTx): Promise<Im
         ops,
       );
       sections.push(hist);
+    }
+    if (payload.loyalty) {
+      const loy = newSection("loyalty", payload.warnings);
+      await planLoyalty(payload.loyalty, db, loy, ops, {
+        historyNumbers: new Set((payload.history ?? []).map((h) => h.number)),
+        now: new Date(),
+      });
+      sections.push(loy);
     }
   } else {
     const clientRows = await db.select().from(clients);
