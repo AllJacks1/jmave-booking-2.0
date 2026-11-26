@@ -6,7 +6,7 @@ import type { RateCardData } from "@/lib/pricing/rate-card";
 import type { BodyType, FuelType } from "@/lib/pricing/types";
 import type { WorkbookKind } from "./workbook";
 
-export const SECTIONS = ["fleet", "rate_cards", "clients", "blacklist", "sequences", "drivers", "history"] as const;
+export const SECTIONS = ["fleet", "rate_cards", "clients", "blacklist", "sequences", "drivers", "history", "loyalty"] as const;
 export type SectionKey = (typeof SECTIONS)[number];
 
 export const SECTION_LABELS: Record<SectionKey, string> = {
@@ -17,6 +17,7 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   sequences: "Number sequences",
   drivers: "Drivers",
   history: "Booking history (quotations and bookings)",
+  loyalty: "Loyalty cards and points",
 };
 
 /**
@@ -128,6 +129,31 @@ export type HistoryImport = {
   paymentMethod: "cash" | "gcash" | "card" | "bank" | "other";
 };
 
+/** One `Loyalty Log` row (Phase 3). */
+export type LoyaltyRowImport = {
+  row: number;
+  /** Stable key (`loyalty:<card>:<VRA>`) so a re-run adds nothing. */
+  importKey: string;
+  /** Rental start (Manila date), null when unreadable. */
+  date: string | null;
+  dateText: string | null;
+  vra: string | null;
+  points: number;
+  /** From `VRA series Log` D / C. */
+  quotationNumber: string | null;
+  clientName: string | null;
+  tier: number | null;
+};
+
+/** One loyalty card: its rows, earliest date, latest tier, total points. */
+export type LoyaltyCardImport = {
+  cardNo: string;
+  rows: LoyaltyRowImport[];
+  memberSince: string | null;
+  tier: number | null;
+  points: number;
+};
+
 export type BookingWorkbookPayload = {
   kind: "booking_workbook";
   fleet: VehicleImport[];
@@ -137,6 +163,8 @@ export type BookingWorkbookPayload = {
   /** Phase 2a (absent in runs previewed before 2a). */
   drivers?: DriverImport[];
   history?: HistoryImport[];
+  /** Phase 3 (absent in runs previewed before 3). */
+  loyalty?: LoyaltyCardImport[];
   warnings: ImportWarning[];
 };
 

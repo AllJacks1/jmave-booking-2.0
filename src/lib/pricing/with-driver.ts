@@ -16,6 +16,7 @@ import {
 import { withDriverInputSchema, type WithDriverInput, type WithDriverParsed } from "./inputs";
 import { applyBps, ceilTo, mulDiv, remarkNumber, remarkPesos } from "./math";
 import type { RateCardData } from "./rate-card";
+import { rewardsLines, type RewardsRedemption } from "./rewards";
 import {
   BODY_TYPE_LABELS,
   PricingInputError,
@@ -57,6 +58,8 @@ export type WithDriverResult = {
   };
   /** Excess-hour rates for the client copy; per hour, not added to the total. */
   supplemental: PriceLine[];
+  /** Points redemption (pricing.md §4); deducted when the booking is confirmed. */
+  rewards: RewardsRedemption | null;
   warnings: string[];
 };
 
@@ -257,6 +260,15 @@ export function priceWithDriver(
     total = 0;
   }
 
+  // Rewards (pricing.md §4): never below ₱0. Free hours use the Self-Drive hourly table.
+  const rw = rewardsLines(card, input.bodyType, input, total);
+  if (rw.line) lines.push(rw.line);
+  if (rw.discount) {
+    discounts.push(rw.discount);
+    total += rw.discount.amount;
+  }
+  warnings.push(...rw.warnings);
+
   const terminalFees = {
     rental: terminalFee(card, total, input.paymentMethods.rental),
     reservation: terminalFee(card, input.reservationFee, input.paymentMethods.reservation),
@@ -295,6 +307,7 @@ export function priceWithDriver(
       balanceOnRelease: grandTotal - dueToday,
     },
     supplemental,
+    rewards: rw.redemption,
     warnings,
   };
 }

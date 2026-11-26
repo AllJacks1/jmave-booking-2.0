@@ -5,8 +5,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { endBlock, saveBlock } from "@/lib/bookings/blocks";
 import type { BlockInput, BookingDetailsInput, BookingScheduleInput, PaymentInput } from "@/lib/bookings/schema";
 import type { ChargeKind } from "@/lib/bookings/constants";
-import { extendBooking, previewExtension } from "@/lib/check-in/service";
-import type { ExtensionInput } from "@/lib/check-in/schema";
+import { extendBooking, previewExtension, undoReturn } from "@/lib/check-in/service";
+import type { ExtensionInput, UndoReturnInput } from "@/lib/check-in/schema";
 import {
   addCharge,
   addPayment,
@@ -106,4 +106,8 @@ export async function previewExtensionAction(input: ExtensionInput) {
 
 export async function extendBookingAction(input: ExtensionInput) {
   return refresh(await extendBooking(await getCurrentUser(), input));
+}
+
+export async function undoReturnAction(input: UndoReturnInput) {
+  return refresh(await undoReturn(await getCurrentUser(), input));
 }

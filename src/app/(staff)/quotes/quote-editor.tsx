@@ -24,7 +24,9 @@ import {
   DRIVER_RATE_MODE_LABELS,
   DRIVING_TERM_LABELS,
   OT_SLOT_LABELS,
+  POINTS_PER_PESO,
   PRICING_BASIS_LABELS,
+  REWARDS_MODE_LABELS,
   SD_PROMO_LABELS,
   SERVICE_AREA_LABELS,
   WD_PACKAGE_LABELS,
@@ -50,6 +52,8 @@ type Props = {
   businessName: string;
   /** Saved quick quotation's validity (for the copy text). */
   validUntil?: string | null;
+  /** Sales+ may redeem rewards on formal quotations. */
+  canRedeem?: boolean;
   revisedFromNumber?: string | null;
 };
 
@@ -508,6 +512,9 @@ export function QuoteEditor(props: Props) {
                 </div>
               </CardContent>
             </Card>
+            {props.canRedeem ? (
+              <RewardsCard control={control} preview={preview} rewardsMode={values.rewardsMode ?? "none"} hasClient={Boolean(values.clientId)} />
+            ) : null}
             {!sd ? (
               <Card>
                 <CardHeader>
@@ -616,6 +623,61 @@ function OverrideDialog({
 }
 
 /** Select bound to any scalar value; `parse` turns the option string back. */
+function RewardsCard({
+  control,
+  preview,
+  rewardsMode,
+  hasClient,
+}: {
+  control: Control<QuoteFormInput>;
+  preview: PricePreview | null;
+  rewardsMode: string;
+  hasClient: boolean;
+}) {
+  const loyalty = preview?.loyalty ?? null;
+  const redemption = preview?.result?.rewards ?? null;
+  return (
+    <Card data-testid="rewards-card">
+      <CardHeader>
+        <CardTitle>Rewards</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-2">
+        <div className="text-sm sm:col-span-2">
+          {!hasClient ? (
+            <span className="text-muted-foreground">Choose a client to see their loyalty card.</span>
+          ) : loyalty ? (
+            <span>
+              Card <strong>{loyalty.cardNo}</strong> · <strong data-testid="rewards-balance">{loyalty.balance.toLocaleString("en-PH")}</strong> points (
+              {fmtPeso(Math.max(0, Math.floor(loyalty.balance / POINTS_PER_PESO)) * 100)}) ·{" "}
+              {loyalty.expired ? <Badge variant="destructive">Expired {loyalty.expiresAt}</Badge> : <>valid until {loyalty.expiresAt}</>}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">This client has no loyalty card yet (it is created on their first returned booking).</span>
+          )}
+        </div>
+        <Choice control={control} name="rewardsMode" label="Redeem" options={opts(REWARDS_MODE_LABELS)} disabled={!loyalty} />
+        {rewardsMode === "discount" ? (
+          <NumberField control={control} name="rewardsPoints" label="Points to redeem" description={`${POINTS_PER_PESO} points = ₱1`} />
+        ) : rewardsMode === "free_hours" ? (
+          <NumberField control={control} name="rewardsHours" label="Free hours" description="Priced at the car's hourly extension rate" />
+        ) : null}
+        {redemption ? (
+          <p className="text-muted-foreground text-sm sm:col-span-2">
+            Uses {redemption.points.toLocaleString("en-PH")} points, deducted when the booking is confirmed and refunded if it is cancelled.
+          </p>
+        ) : null}
+        {preview?.rewardsProblem ? (
+          <Alert variant="destructive" className="sm:col-span-2">
+            <TriangleAlertIcon />
+            <AlertTitle>Cannot issue with this redemption</AlertTitle>
+            <AlertDescription>{preview.rewardsProblem}</AlertDescription>
+          </Alert>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 function Choice({
   control,
   name,

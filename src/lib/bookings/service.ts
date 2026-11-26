@@ -24,6 +24,7 @@ import { ActionError, defineAction } from "@/lib/actions";
 import { withAudit } from "@/lib/audit";
 import { checkTransition, holdsVehicle, paymentsOpen, releasesHold, scheduleEditable, detailsEditable, type BookingEvent } from "@/lib/booking-status";
 import { releaseHold, setHold, turnaroundBufferMinutes, VehicleConflictError } from "@/lib/holds";
+import { redeemForConfirm, refundRedemption } from "@/lib/loyalty/ledger";
 import { can } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
 import { effectiveStatus } from "@/lib/quotes/document";
@@ -267,7 +268,9 @@ export const confirmBooking = defineAction({
           ...(skipRf ? { withoutRfReason } : {}),
         },
       );
-      return { id: updated.id, status: updated.status };
+      // Rewards redeemed on the quotation are deducted now (pricing.md §4).
+      const pointsRedeemed = await redeemForConfirm(tx, actor, updated);
+      return { id: updated.id, status: updated.status, pointsRedeemed };
     });
   },
 });
@@ -279,7 +282,8 @@ export const cancelBooking = defineAction({
     return db.transaction(async (tx) => {
       const cur = await lockBooking(tx, id);
       const updated = await transition(tx, actor, cur, "cancel", { statusNote: reason }, { reason });
-      return { id: updated.id, status: updated.status };
+      const pointsRefunded = await refundRedemption(tx, actor, updated, reason);
+      return { id: updated.id, status: updated.status, pointsRefunded };
     });
   },
 });

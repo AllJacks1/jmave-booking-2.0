@@ -84,6 +84,7 @@ export function CheckInForm({ mode, bookingId, backHref, defaults, address, refe
       setBusy(false);
       if (!r.ok) return fail(r);
       for (const w of r.data.warnings) toast.warning(w, { duration: 10_000 });
+      if (r.data.pointsEarned > 0) toast.success(`${r.data.pointsEarned.toLocaleString("en-PH")} loyalty points added to ${r.data.cardNo}`);
     }
     toast.success(mode === "release" ? "Release recorded" : "Return recorded");
     router.push(backHref);

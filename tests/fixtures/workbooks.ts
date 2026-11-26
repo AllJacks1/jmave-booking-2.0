@@ -133,6 +133,8 @@ export type FixtureOptions = {
   tamperCompact24h?: number;
   /** Extra Rental Log rows appended after the defaults. */
   extraRentalRows?: Partial<Record<string, ExcelJS.CellValue>>[];
+  /** Phase 3: add `Loyalty Log` + `VRA series Log` with these rows (columns by letter). */
+  loyalty?: { log: Partial<Record<string, ExcelJS.CellValue>>[]; vra: Partial<Record<string, ExcelJS.CellValue>>[] };
 };
 
 /** Rental Log columns used by the import (letters per import-map.md). */
@@ -215,6 +217,19 @@ export async function bookingWorkbook(opts: FixtureOptions = {}): Promise<Buffer
   WD_ROWS.forEach((row, i) => {
     for (const [c, v] of Object.entries(row)) wdLog.getCell(`${c}${i + 2}`).value = v ?? null;
   });
+
+  if (opts.loyalty) {
+    const ll = wb.addWorksheet("Loyalty Log");
+    ll.addRow([" ", "Loyalty Number", "VRA Number", "Number of Rent", "Number of Days", "Points Earned", "Tier"]);
+    opts.loyalty.log.forEach((row, i) => {
+      for (const [c, v] of Object.entries(row)) ll.getCell(`${c}${i + 2}`).value = v ?? null;
+    });
+    const vra = wb.addWorksheet("VRA series Log");
+    vra.addRow(["Series Number", "Date Generated", "Client Name", "Quotation Number", "Rental Total", "No. of Days"]);
+    opts.loyalty.vra.forEach((row, i) => {
+      for (const [c, v] of Object.entries(row)) vra.getCell(`${c}${i + 2}`).value = v ?? null;
+    });
+  }
 
   return Buffer.from(await wb.xlsx.writeBuffer());
 }

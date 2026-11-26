@@ -5,6 +5,7 @@ import { parseBlacklist } from "./blacklist";
 import { parseClients } from "./clients";
 import { parseFleet } from "./fleet";
 import { parseDrivers, parseHistory } from "./history";
+import { parseLoyalty } from "./loyalty";
 import { parseRateCards } from "./rate-cards";
 import type { ImportPayload } from "./types";
 import { BOOKING_WORKBOOK, detectKind, loadWorkbook, type Workbook } from "./workbook";
@@ -29,6 +30,7 @@ export function parseWorkbook(wb: Workbook): ImportPayload {
     const clients = parseClients(wb);
     const drivers = parseDrivers(wb);
     const history = parseHistory(wb);
+    const loyalty = parseLoyalty(wb);
     return {
       kind,
       fleet: fleet.vehicles,
@@ -37,7 +39,8 @@ export function parseWorkbook(wb: Workbook): ImportPayload {
       sequences: clients.sequences,
       drivers: drivers.drivers,
       history: history.history,
-      warnings: [...fleet.warnings, ...rates.warnings, ...clients.warnings, ...drivers.warnings, ...history.warnings],
+      loyalty: loyalty.loyalty,
+      warnings: [...fleet.warnings, ...rates.warnings, ...clients.warnings, ...drivers.warnings, ...history.warnings, ...loyalty.warnings],
     };
   }
   const bl = parseBlacklist(wb);

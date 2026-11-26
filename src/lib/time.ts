@@ -71,6 +71,14 @@ export function addDaysToKey(dateKey: DateKey, days: number): DateKey {
   return manilaDateKey(new Date(start.getTime() + days * DAY_MS));
 }
 
+/** Same calendar day `years` later (29 Feb → 28 Feb in a non-leap year). */
+export function addYearsToKey(dateKey: DateKey, years: number): DateKey {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const ny = y + years;
+  const last = new Date(Date.UTC(ny, m, 0)).getUTCDate();
+  return `${ny}-${String(m).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}` as DateKey;
+}
+
 /** Manila year of an instant (numbering resets on Manila New Year). */
 export function manilaYear(d: Date): number {
   return manilaParts(d).year;

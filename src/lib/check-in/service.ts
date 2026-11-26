@@ -41,9 +41,10 @@ import {
   type RateCardData,
   type ReturnCharges,
 } from "@/lib/pricing";
+import { earnForReturn, reverseEarn } from "@/lib/loyalty/ledger";
 import { getSettings } from "@/lib/settings/service";
 import { manilaToUtc } from "@/lib/time";
-import { extensionSchema, FUTURE_TOLERANCE_MINUTES, releaseSchema, returnSchema } from "./schema";
+import { extensionSchema, FUTURE_TOLERANCE_MINUTES, releaseSchema, returnSchema, undoReturnSchema } from "./schema";
 
 const MINUTE_MS = 60_000;
 
@@ -307,6 +308,10 @@ export const recordReturn = defineAction({
       await setStatus(tx, cur, check.to);
       const warnings = [...preview.warnings];
 
+      // Rewards: 50 points per billed rental day (pricing.md §4), idempotent per booking.
+      const earned = await earnForReturn(tx, actor, cur, preview.billedDays, actualAt);
+      if (earned.warning) warnings.push(earned.warning);
+
       // Hold end = actual return + buffer (PLAN §6.2). A late car may now touch
       // the next booking's hold: keep the return (the car is back) and warn.
       if (cur.vehicleId) {
@@ -341,10 +346,73 @@ export const recordReturn = defineAction({
           delivery: input.delivery,
           eventId: ev.id,
           charges: preview.lines.map((l) => ({ kind: l.kind, amount: l.amount })),
+          pointsEarned: earned.points,
         },
         tx,
       );
-      return { id: cur.id, status: check.to, charges: preview.lines, total: preview.total, warnings };
+      return { id: cur.id, status: check.to, charges: preview.lines, total: preview.total, warnings, pointsEarned: earned.points, cardNo: earned.cardNo };
+    });
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Undo a return (Admin+, with a reason)
+// ---------------------------------------------------------------------------
+
+/**
+ * returned → released: removes the return check-in and the charges it added,
+ * moves the hold back to the planned end and takes back the points earned.
+ * Refused (409) when the planned period now clashes with another hold, or the
+ * booking is already closed.
+ */
+export const undoReturn = defineAction({
+  permission: "movement.undo_return",
+  input: undoReturnSchema,
+  handler: async (actor, { bookingId, reason }) => {
+    return db.transaction(async (tx) => {
+      const cur = await lockBooking(tx, bookingId);
+      if (cur.status !== "returned") {
+        throw new ActionError(409, cur.status === "closed" ? "A closed booking cannot be reopened." : "Only a returned booking can have its return undone.");
+      }
+      const [ret] = await tx
+        .select()
+        .from(movementEvents)
+        .where(and(eq(movementEvents.bookingId, cur.id), eq(movementEvents.kind, "return")));
+      const removed = await tx
+        .delete(bookingCharges)
+        .where(and(eq(bookingCharges.bookingId, cur.id), eq(bookingCharges.source, "check_in")))
+        .returning({ code: bookingCharges.code, amountCentavos: bookingCharges.amountCentavos });
+      if (ret) await tx.delete(movementEvents).where(eq(movementEvents.id, ret.id));
+      await setStatus(tx, cur, "released");
+
+      if (cur.vehicleId) {
+        const release = await releaseEvent(tx, cur.id);
+        const holdStart = release && release.actualAt < cur.startAt ? release.actualAt : cur.startAt;
+        const settings = await getSettings(tx);
+        try {
+          await setHold(tx, { bookingId: cur.id }, { vehicleId: cur.vehicleId, startAt: holdStart, endAt: cur.endAt, bufferMinutes: settings.turnaround_buffer_minutes });
+        } catch (err) {
+          if (err instanceof VehicleConflictError) {
+            throw new ActionError(409, `The car's planned period now clashes with ${err.conflict?.bookingNumber ?? "another hold"}. Move that booking first.`);
+          }
+          throw err;
+        }
+      }
+      const pointsReversed = await reverseEarn(tx, actor, cur, reason);
+      await withAudit(
+        actor,
+        "booking.undo_return",
+        "booking",
+        cur.id,
+        {
+          status: cur.status,
+          returnEvent: ret ? { actualAt: ret.actualAt.toISOString(), odometerKm: ret.odometerKm, fuelLevelEighths: ret.fuelLevelEighths } : null,
+          charges: removed,
+        },
+        { status: "released", reason, pointsReversed },
+        tx,
+      );
+      return { id: cur.id, status: "released" as const, chargesRemoved: removed.length, pointsReversed };
     });
   },
 });
