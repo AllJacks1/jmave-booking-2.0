@@ -12,6 +12,7 @@ import {
   pgEnum,
   pgTable,
   text,
+  time,
   timestamp,
   uniqueIndex,
   uuid,
@@ -23,7 +24,9 @@ import {
   BOOKING_STATUSES,
   CHARGE_KINDS,
   CHARGE_SOURCES,
+  DUTIES,
   HOLD_KINDS,
+  MOVEMENT_KINDS,
   PAYMENT_DIRECTIONS,
   PAYMENT_METHODS,
   PAYMENT_TYPES,
@@ -457,6 +460,8 @@ export const bookings = pgTable(
     reworkLink: text("rework_link"),
     orIssued: boolean("or_issued").notNull().default(false),
     notes: text("notes"),
+    /** Show `notes` under "Special instructions" on the movement board (Phase 2b). */
+    showNotesOnBoard: boolean("show_notes_on_board").notNull().default(false),
     /** Cancel / no-show reason, import conflict note. */
     statusNote: text("status_note"),
     confirmWithoutRfReason: text("confirm_without_rf_reason"),
@@ -577,6 +582,80 @@ export const payments = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Phase 2b: movement events, shift roster
+// ---------------------------------------------------------------------------
+
+export const movementKindEnum = pgEnum("movement_kind", MOVEMENT_KINDS);
+export const dutyEnum = pgEnum("duty", DUTIES);
+
+/**
+ * Release / return check-ins and extensions (bookings-and-movement.md §5).
+ * `planned_at` = the booking's start (release), end (return) or new end
+ * (extension) at the time of recording; `actual_at` = when it happened.
+ */
+export const movementEvents = pgTable(
+  "movement_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    bookingId: uuid("booking_id")
+      .notNull()
+      .references(() => bookings.id, { onDelete: "cascade" }),
+    vehicleId: uuid("vehicle_id").references(() => vehicles.id, { onDelete: "restrict" }),
+    kind: movementKindEnum("kind").notNull(),
+    plannedAt: timestamp("planned_at", { withTimezone: true }),
+    actualAt: timestamp("actual_at", { withTimezone: true }).notNull(),
+    odometerKm: integer("odometer_km"),
+    /** 0–8 eighths of a tank. */
+    fuelLevelEighths: integer("fuel_level_eighths"),
+    /** Release: delivery done (FD). Return: pick-up done (PU). */
+    delivery: boolean("delivery").notNull().default(false),
+    /** Extension: end before / after. */
+    previousEndAt: timestamp("previous_end_at", { withTimezone: true }),
+    newEndAt: timestamp("new_end_at", { withTimezone: true }),
+    recordedBy: uuid("recorded_by").references(() => user.id, { onDelete: "set null" }),
+    notes: text("notes"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("movement_events_booking_idx").on(t.bookingId, t.actualAt),
+    index("movement_events_vehicle_idx").on(t.vehicleId, t.actualAt),
+    check("movement_events_fuel_range", sql`${t.fuelLevelEighths} is null or ${t.fuelLevelEighths} between 0 and 8`),
+    check("movement_events_odometer_positive", sql`${t.odometerKm} is null or ${t.odometerKm} >= 0`),
+  ],
+);
+
+/** Shift templates (seeded: 5AM–2PM, 8AM–5PM, 10AM–7PM, 1PM–10PM, 9PM–6AM). `end_time` ≤ `start_time` crosses midnight. */
+export const shiftTemplates = pgTable("shift_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  startTime: time("start_time").notNull(),
+  endTime: time("end_time").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: createdAt(),
+});
+
+/** One shift per person per day. */
+export const shiftAssignments = pgTable(
+  "shift_assignments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    date: date("date", { mode: "string" }).notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    templateId: uuid("template_id")
+      .notNull()
+      .references(() => shiftTemplates.id, { onDelete: "restrict" }),
+    duty: dutyEnum("duty").notNull(),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("shift_assignments_date_user_idx").on(t.date, t.userId)],
+);
+
 export type UserRow = typeof user.$inferSelect;
 export type QuotationRow = typeof quotations.$inferSelect;
 export type AuditLogRow = typeof auditLog.$inferSelect;
@@ -591,3 +670,6 @@ export type VehicleBlockRow = typeof vehicleBlocks.$inferSelect;
 export type BookingChargeRow = typeof bookingCharges.$inferSelect;
 export type PaymentRow = typeof payments.$inferSelect;
 export type DriverRow = typeof drivers.$inferSelect;
+export type MovementEventRow = typeof movementEvents.$inferSelect;
+export type ShiftTemplateRow = typeof shiftTemplates.$inferSelect;
+export type ShiftAssignmentRow = typeof shiftAssignments.$inferSelect;

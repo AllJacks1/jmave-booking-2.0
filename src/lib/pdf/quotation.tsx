@@ -5,7 +5,7 @@
 import "server-only";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { Document, Font, Image, Page, renderToBuffer, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, renderToBuffer, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { ComponentProps, ReactNode } from "react";
 import {
   PRICING_BASIS_LABELS,
@@ -41,19 +41,9 @@ import {
   WD_PENDING,
   wdBookingInfo,
 } from "@/lib/quotes/terms";
+import { registerPdfFonts } from "./fonts";
 
-// Geist has the ₱ glyph; the built-in PDF fonts do not.
-const FONT_DIR = path.join(process.cwd(), "node_modules", "geist", "dist", "fonts", "geist-sans");
-Font.register({
-  family: "Geist",
-  fonts: [
-    { src: path.join(FONT_DIR, "Geist-Regular.ttf"), fontWeight: 400 },
-    { src: path.join(FONT_DIR, "Geist-SemiBold.ttf"), fontWeight: 600 },
-    { src: path.join(FONT_DIR, "Geist-Bold.ttf"), fontWeight: 700 },
-  ],
-});
-// Never split words with hyphens (names, plate numbers).
-Font.registerHyphenationCallback((word) => [word]);
+registerPdfFonts();
 
 const LOGO = path.join(process.cwd(), "public", "brand", "logo.png");
 

@@ -27,6 +27,7 @@ const EXPECTED: Record<Action, [boolean, boolean, boolean, boolean]> = {
   "bookings.confirm_without_rf": [Y, Y, N, N],
   "payments.add": [Y, Y, Y, N],
   "payments.void": [Y, Y, N, N],
+  "charges.remove_check_in": [Y, Y, N, N],
   "calendar.view": [Y, Y, Y, Y],
   "board.view": [Y, Y, Y, Y],
   "movement.check_in": [Y, Y, Y, Y],

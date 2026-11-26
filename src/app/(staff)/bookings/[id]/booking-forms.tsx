@@ -167,6 +167,7 @@ type Details = {
   reworkLink: string;
   orIssued: boolean;
   notes: string;
+  showNotesOnBoard: boolean;
 };
 
 export function DetailsForm({ initial, editable, service }: { initial: Details; editable: boolean; service: Service }) {
@@ -276,6 +277,10 @@ export function DetailsForm({ initial, editable, service }: { initial: Details; 
         {text("contactHandle", "Contact handle", { placeholder: "FB name, WhatsApp number…" })}
         {text("reworkLink", "Rework inbox link", { placeholder: "https://…" })}
         {text("notes", "Notes", { area: true, span: true })}
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox disabled={!editable} checked={d.showNotesOnBoard} onCheckedChange={(v) => set("showNotesOnBoard", v === true)} />
+          Show notes on the movement board
+        </label>
         <label className="flex items-center gap-2 text-sm">
           <Checkbox disabled={!editable} checked={d.orIssued} onCheckedChange={(v) => set("orIssued", v === true)} />
           Official receipt (OR) issued

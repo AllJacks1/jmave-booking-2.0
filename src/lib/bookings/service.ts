@@ -423,7 +423,11 @@ export const removeCharge = defineAction({
     return db.transaction(async (tx) => {
       const [c] = await tx.select().from(bookingCharges).where(eq(bookingCharges.id, id));
       if (!c) throw new ActionError(404, "Charge not found.");
-      if (c.source !== "manual") throw new ActionError(409, "Only manual charges can be removed.");
+      if (c.source === "quote") throw new ActionError(409, "Quoted lines cannot be removed. Add a manual adjustment instead.");
+      // Check-in charges (excess km, fuel, late return): Admin and up, with the reason audited.
+      if (c.source === "check_in" && !can(actor, "charges.remove_check_in")) {
+        throw new ActionError(403, "Only Admin can remove a check-in charge.");
+      }
       const cur = await lockBooking(tx, c.bookingId);
       if (!paymentsOpen(cur.status)) throw new ActionError(409, "This booking is closed.");
       await tx.delete(bookingCharges).where(eq(bookingCharges.id, id));
