@@ -60,7 +60,20 @@ function useRun() {
 
 type ChargeRow = { id: string; kind: ChargeKind; label: string; amountCentavos: number; source: "quote" | "check_in" | "manual" };
 
-export function ChargesCard({ bookingId, charges, ledger, open }: { bookingId: string; charges: ChargeRow[]; ledger: Ledger; open: boolean }) {
+export function ChargesCard({
+  bookingId,
+  charges,
+  ledger,
+  open,
+  canRemoveCheckIn = false,
+}: {
+  bookingId: string;
+  charges: ChargeRow[];
+  ledger: Ledger;
+  open: boolean;
+  /** Admin+: check-in charges (excess km, fuel, late return) can be removed with a reason. */
+  canRemoveCheckIn?: boolean;
+}) {
   const { busy, run } = useRun();
   const [adding, setAdding] = useState(false);
   const [kind, setKind] = useState<ChargeKind>("other");
@@ -101,7 +114,7 @@ export function ChargesCard({ bookingId, charges, ledger, open }: { bookingId: s
               </TableRow>
             ) : (
               charges.map((c) => (
-                <TableRow key={c.id}>
+                <TableRow key={c.id} data-testid="charge-row" data-source={c.source} data-kind={c.kind}>
                   <TableCell className="pl-6 whitespace-normal">
                     {c.label}
                     {c.kind !== "quoted" ? <span className="ml-2 text-xs text-muted-foreground">{CHARGE_KIND_LABELS[c.kind]}</span> : null}
@@ -109,7 +122,7 @@ export function ChargesCard({ bookingId, charges, ledger, open }: { bookingId: s
                   <TableCell className="text-muted-foreground">{c.source === "quote" ? "Quote" : c.source === "check_in" ? "Check-in" : "Manual"}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmtPeso(c.amountCentavos)}</TableCell>
                   <TableCell className="pr-6">
-                    {open && c.source === "manual" ? (
+                    {open && (c.source === "manual" || (c.source === "check_in" && canRemoveCheckIn)) ? (
                       <Button size="icon" variant="ghost" aria-label="Remove charge" onClick={() => setRemoving(c)}>
                         <Trash2Icon />
                       </Button>

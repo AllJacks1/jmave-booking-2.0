@@ -58,6 +58,8 @@ export const bookingDetailsSchema = z.object({
     .transform((v) => (v === "" ? null : v)),
   orIssued: z.boolean().default(false),
   notes: nullableText(4000),
+  /** Show the notes under "Special instructions" on the movement board. */
+  showNotesOnBoard: z.boolean().default(false),
 });
 export type BookingDetailsInput = z.input<typeof bookingDetailsSchema>;
 

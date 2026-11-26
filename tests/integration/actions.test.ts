@@ -25,6 +25,7 @@ const settingsInput = () => ({
   fuel_prices_centavos: { ...DEFAULT_SETTINGS.fuel_prices_centavos },
   quote_validity_hours: DEFAULT_SETTINGS.quote_validity_hours,
   turnaround_buffer_minutes: DEFAULT_SETTINGS.turnaround_buffer_minutes,
+  late_return_grace_minutes: DEFAULT_SETTINGS.late_return_grace_minutes,
 });
 
 describe.skipIf(!hasTestDb)("server actions against the database", () => {

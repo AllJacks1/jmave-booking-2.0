@@ -9,6 +9,7 @@ import { allowedEvents, detailsEditable, paymentsOpen, scheduleEditable } from "
 import { availabilityMessage, bookingLabel, movementCodes } from "@/lib/bookings/format";
 import { requirePermissionPage } from "@/lib/bookings/page";
 import { getBookingView, staffOptions } from "@/lib/bookings/queries";
+import { bookingMovements } from "@/lib/check-in/service";
 import { listDrivers } from "@/lib/drivers/service";
 import { can } from "@/lib/permissions";
 import { SERVICE_LABELS } from "@/lib/pricing/types";
@@ -18,6 +19,9 @@ import { manilaDateKey, manilaTime } from "@/lib/time";
 import { BookingActions } from "./booking-actions";
 import { ChargesCard, PaymentsCard } from "./ledger-cards";
 import { DetailsForm, DriverAssign, ScheduleForm } from "./booking-forms";
+import { ExtendDialog } from "./extend-dialog";
+import { Button } from "@/components/ui/button";
+import { fuelText } from "@/lib/check-in/format";
 
 export const metadata: Metadata = { title: "Booking" };
 
@@ -28,10 +32,11 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
   const v = await getBookingView(id);
   if (!v) notFound();
   const b = v.booking;
-  const [vehicles, staff, driverList] = await Promise.all([
+  const [vehicles, staff, driverList, movements] = await Promise.all([
     listVehiclesForQuotes(),
     staffOptions(),
     b.service === "with_driver" ? listDrivers({ activeOnly: true }) : Promise.resolve([]),
+    bookingMovements(b.id),
   ]);
   const clientName = v.client?.fullName ?? b.clientName;
   const codes = movementCodes(b);
@@ -56,6 +61,21 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
         canConfirmWithoutRf={can(user, "bookings.confirm_without_rf")}
         availability={v.availability}
       />
+      <div className="flex flex-wrap gap-2">
+        {b.status === "confirmed" && can(user, "movement.check_in") ? (
+          <Button asChild>
+            <Link href={`/board/release/${b.id}`}>Release check-in</Link>
+          </Button>
+        ) : null}
+        {b.status === "released" && can(user, "movement.check_in") ? (
+          <Button asChild>
+            <Link href={`/board/return/${b.id}`}>Return check-in</Link>
+          </Button>
+        ) : null}
+        {b.status === "confirmed" || b.status === "released" ? (
+          <ExtendDialog bookingId={b.id} endDate={manilaDateKey(b.endAt)} endTime={manilaTime(b.endAt)} endText={fmtDateTime(b.endAt)} />
+        ) : null}
+      </div>
       {b.status === "cancelled" || b.status === "no_show" ? (
         <Alert>
           <AlertTitle>{b.status === "cancelled" ? "Cancelled" : "No-show"}</AlertTitle>
@@ -95,7 +115,13 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
             vehicleLabel={v.vehicle?.displayName ?? b.vehicleLabel}
             holdText={v.hold ? `${v.hold.active ? "Holding" : "Released"}: ${fmtDateTime(v.hold.start)} → ${fmtDateTime(v.hold.end)} (incl. turnaround)` : null}
           />
-          <ChargesCard bookingId={b.id} charges={v.charges} ledger={v.ledger} open={paymentsOpen(b.status)} />
+          <ChargesCard
+            bookingId={b.id}
+            charges={v.charges}
+            ledger={v.ledger}
+            open={paymentsOpen(b.status)}
+            canRemoveCheckIn={can(user, "charges.remove_check_in")}
+          />
           <PaymentsCard
             bookingId={b.id}
             payments={v.payments.map((p) => ({ ...p, paidAt: p.paidAt.toISOString(), voidedAt: p.voidedAt?.toISOString() ?? null }))}
@@ -124,6 +150,7 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               reworkLink: b.reworkLink ?? "",
               orIssued: b.orIssued,
               notes: b.notes ?? "",
+              showNotesOnBoard: b.showNotesOnBoard,
             }}
           />
         </div>
@@ -164,6 +191,33 @@ export default async function BookingPage({ params }: { params: Promise<{ id: st
               editable={detailsEditable(b.status) && b.status !== "closed"}
             />
           ) : null}
+          <Card>
+            <CardHeader>
+              <CardTitle>Movement</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 text-sm" data-testid="movements">
+              {movements.length === 0 ? <p className="text-muted-foreground">Not released yet.</p> : null}
+              {movements.map((m) => (
+                <div key={m.id} data-kind={m.kind}>
+                  <p className="font-medium">
+                    {m.kind === "release" ? "Released" : m.kind === "return" ? "Returned" : "Extended"} · {fmtDateTime(m.actualAt)}
+                  </p>
+                  {m.kind === "extension" ? (
+                    <p className="text-muted-foreground">
+                      {m.previousEndAt ? fmtDateTime(m.previousEndAt) : "—"} → {m.newEndAt ? fmtDateTime(m.newEndAt) : "—"}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      {m.odometerKm !== null ? `${m.odometerKm.toLocaleString("en-PH")} km` : "—"} · fuel {fuelText(m.fuelLevelEighths)}
+                      {m.delivery ? (m.kind === "release" ? " · delivered" : " · picked up") : ""}
+                    </p>
+                  )}
+                  {m.notes ? <p className="whitespace-pre-wrap">{m.notes}</p> : null}
+                  <p className="text-xs text-muted-foreground">by {m.recordedByName ?? "—"}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <CardTitle>Record</CardTitle>

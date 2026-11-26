@@ -31,6 +31,7 @@ const formSchema = z.object({
   fuel: z.object({ gasoline: peso, premium: peso, diesel: peso }),
   quoteValidityHours: wholeNumber,
   turnaroundBufferMinutes: wholeNumber,
+  lateReturnGraceMinutes: wholeNumber,
 });
 type FormValues = z.infer<typeof formSchema>;
 
@@ -48,6 +49,7 @@ function toForm(s: Settings): FormValues {
     },
     quoteValidityHours: String(s.quote_validity_hours),
     turnaroundBufferMinutes: String(s.turnaround_buffer_minutes),
+    lateReturnGraceMinutes: String(s.late_return_grace_minutes),
   };
 }
 
@@ -55,6 +57,7 @@ function toForm(s: Settings): FormValues {
 const SERVER_TO_FORM: Record<string, string> = {
   quote_validity_hours: "quoteValidityHours",
   turnaround_buffer_minutes: "turnaroundBufferMinutes",
+  late_return_grace_minutes: "lateReturnGraceMinutes",
 };
 
 export function SettingsForm({ initial, readOnly }: { initial: Settings; readOnly: boolean }) {
@@ -73,6 +76,7 @@ export function SettingsForm({ initial, readOnly }: { initial: Settings; readOnl
       },
       quote_validity_hours: Number(v.quoteValidityHours),
       turnaround_buffer_minutes: Number(v.turnaroundBufferMinutes),
+      late_return_grace_minutes: Number(v.lateReturnGraceMinutes),
     });
     if (!result.ok) {
       applyFieldErrors(form.setError, {
@@ -148,6 +152,14 @@ export function SettingsForm({ initial, readOnly }: { initial: Settings; readOnl
                 label="Turnaround buffer (minutes)"
                 inputMode="numeric"
                 description="Added after each return before the car can be booked again."
+                disabled={disabled}
+              />
+              <TextField
+                control={form.control}
+                name="lateReturnGraceMinutes"
+                label="Late return grace (minutes)"
+                inputMode="numeric"
+                description="A return later than this after the booked end is charged every late hour."
                 disabled={disabled}
               />
             </FieldGroup>

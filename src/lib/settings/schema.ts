@@ -46,6 +46,12 @@ export const SETTINGS_SCHEMAS = {
     .int()
     .min(0, "Cannot be negative")
     .max(1440, "At most 1,440 minutes"),
+  /** Return check-in: late hours are charged only after this grace (PLAN Q11). */
+  late_return_grace_minutes: z
+    .number()
+    .int()
+    .min(0, "Cannot be negative")
+    .max(1440, "At most 1,440 minutes"),
 } as const;
 
 export type SettingsKey = keyof typeof SETTINGS_SCHEMAS;
@@ -70,4 +76,5 @@ export const DEFAULT_SETTINGS: Settings = {
   fuel_prices_centavos: { gasoline: 9400, premium: 9900, diesel: 9800 },
   quote_validity_hours: 24,
   turnaround_buffer_minutes: 60,
+  late_return_grace_minutes: 60,
 };

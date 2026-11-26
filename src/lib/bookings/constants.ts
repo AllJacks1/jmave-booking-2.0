@@ -139,3 +139,15 @@ export const ID_TYPES = [
   "Other",
 ] as const;
 export type IdType = (typeof ID_TYPES)[number];
+
+/** `movement_events.kind` (Phase 2b). */
+export const MOVEMENT_KINDS = ["release", "return", "extension"] as const;
+export type MovementKind = (typeof MOVEMENT_KINDS)[number];
+
+/** Shift roster duty (bookings-and-movement.md §9). */
+export const DUTIES = ["operations", "sales"] as const;
+export type Duty = (typeof DUTIES)[number];
+export const DUTY_LABELS: Record<Duty, string> = { operations: "Ops", sales: "Sales" };
+
+/** Fuel gauge in eighths (0 = empty, 8 = full). */
+export const FUEL_EIGHTHS_MAX = 8;

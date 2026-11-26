@@ -37,6 +37,8 @@ export const PERMISSIONS = {
   // Payments ledger
   "payments.add": SALES_UP,
   "payments.void": ADMIN_UP,
+  // Remove a charge the return check-in added (with a reason): Admin and up (Phase 2b brief §4)
+  "charges.remove_check_in": ADMIN_UP,
   // Calendar + Daily Movement board: view
   "calendar.view": ALL,
   "board.view": ALL,

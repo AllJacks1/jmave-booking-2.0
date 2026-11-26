@@ -90,6 +90,7 @@ export const DRIVER_RATE_MODE_LABELS: Record<(typeof DRIVER_RATE_MODES)[number],
 };
 export const WD_EVENTS = ["auto", "regular", "holiday"] as const;
 export const PRICING_BASES = ["all_in", "renters_fuel"] as const;
+export type PricingBasis = (typeof PRICING_BASES)[number];
 export const PRICING_BASIS_LABELS: Record<(typeof PRICING_BASES)[number], string> = {
   all_in: "All-in (we buy fuel)",
   renters_fuel: "Renter's fuel",

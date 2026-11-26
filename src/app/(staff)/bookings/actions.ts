@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { endBlock, saveBlock } from "@/lib/bookings/blocks";
 import type { BlockInput, BookingDetailsInput, BookingScheduleInput, PaymentInput } from "@/lib/bookings/schema";
 import type { ChargeKind } from "@/lib/bookings/constants";
+import { extendBooking, previewExtension } from "@/lib/check-in/service";
+import type { ExtensionInput } from "@/lib/check-in/schema";
 import {
   addCharge,
   addPayment,
@@ -28,6 +30,7 @@ function refresh<T extends Result>(r: T, ...paths: string[]): T {
   if (r.ok) {
     revalidatePath("/bookings", "layout");
     revalidatePath("/calendar");
+    revalidatePath("/board");
     for (const p of paths) revalidatePath(p);
   }
   return r;
@@ -95,4 +98,12 @@ export async function saveBlockAction(input: BlockInput) {
 
 export async function endBlockAction(input: { id: string }) {
   return refresh(await endBlock(await getCurrentUser(), input));
+}
+
+export async function previewExtensionAction(input: ExtensionInput) {
+  return previewExtension(await getCurrentUser(), input);
+}
+
+export async function extendBookingAction(input: ExtensionInput) {
+  return refresh(await extendBooking(await getCurrentUser(), input));
 }
