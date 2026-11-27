@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/session";
 import type { ClientInput } from "@/lib/clients/schema";
-import { createClient } from "@/lib/clients/service";
+import { createClientFromQuote } from "@/lib/clients/service";
 import { sendQuotationEmail, type SendEmailInput } from "@/lib/quotes/email";
 import type { QuoteFormInput } from "@/lib/quotes/schema";
 import {
@@ -63,7 +63,7 @@ export async function searchClientsAction(q: string) {
 }
 
 export async function createClientInlineAction(input: ClientInput) {
-  return createClient(await getCurrentUser(), input);
+  return createClientFromQuote(await getCurrentUser(), input);
 }
 
 export async function sendQuotationEmailAction(input: SendEmailInput) {

@@ -11,6 +11,7 @@ import {
   GaugeIcon,
   HistoryIcon,
   IdCardIcon,
+  InboxIcon,
   LayoutDashboardIcon,
   type LucideIcon,
   SettingsIcon,
@@ -28,6 +29,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -38,6 +40,7 @@ import { NAV_GROUP_LABELS, type NavIcon, type NavItem } from "@/lib/nav";
 const ICONS: Record<NavIcon, LucideIcon> = {
   dashboard: LayoutDashboardIcon,
   quotes: FileTextIcon,
+  inquiries: InboxIcon,
   bookings: ClipboardListIcon,
   calendar: CalendarDaysIcon,
   board: GaugeIcon,
@@ -53,7 +56,8 @@ const ICONS: Record<NavIcon, LucideIcon> = {
   settings: SettingsIcon,
 };
 
-export function AppSidebar({ items }: { items: NavItem[] }) {
+/** `badges`: count shown next to a menu item (e.g. new booking requests), by href. */
+export function AppSidebar({ items, badges = {} }: { items: NavItem[]; badges?: Record<string, number> }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
   const groups = (["work", "operations", "admin"] as const)
@@ -96,6 +100,11 @@ export function AppSidebar({ items }: { items: NavItem[] }) {
                           <span>{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
+                      {badges[item.href] ? (
+                        <SidebarMenuBadge data-testid={`nav-badge-${item.href.slice(1)}`} aria-label={`${badges[item.href]} new`}>
+                          {badges[item.href]}
+                        </SidebarMenuBadge>
+                      ) : null}
                     </SidebarMenuItem>
                   );
                 })}

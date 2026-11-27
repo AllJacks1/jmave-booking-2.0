@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { VehicleRow } from "@/db/schema";
 import { FUEL_TYPE_LABELS, OWNERSHIP_LABELS } from "@/lib/fleet/schema";
-import { BODY_TYPE_LABELS } from "@/lib/pricing/types";
+import { BODY_TYPE_LABELS, CATEGORY_LABELS, type Category } from "@/lib/pricing/types";
+import { publicCategory } from "@/lib/public/quote-form";
 import { VehicleFormDialog } from "./vehicle-form-dialog";
 
 export type VehicleItem = Omit<VehicleRow, "createdAt" | "updatedAt"> & { createdAt: string; updatedAt: string };
@@ -64,7 +65,14 @@ export function FleetTable({ vehicles, canEdit }: { vehicles: VehicleItem[]; can
                   </div>
                 </TableCell>
                 <TableCell className="font-mono text-xs">{v.plate ?? "—"}</TableCell>
-                <TableCell>{v.bodyType ? BODY_TYPE_LABELS[v.bodyType] : <Badge variant="destructive">Missing</Badge>}</TableCell>
+                <TableCell>
+                  {v.bodyType ? BODY_TYPE_LABELS[v.bodyType] : <Badge variant="destructive">Missing</Badge>}
+                  {v.category ? <span className="text-xs text-muted-foreground"> · {CATEGORY_LABELS[v.category as Category] ?? v.category}</span> : null}
+                  {v.active && !publicCategory(v).ok && v.listedPublicly ? (
+                    <div className="text-xs text-destructive">Not on booking page: set the rate category</div>
+                  ) : null}
+                  {!v.listedPublicly ? <div className="text-xs text-muted-foreground">Hidden from booking page</div> : null}
+                </TableCell>
                 <TableCell className="hidden md:table-cell">{v.fuelType ? FUEL_TYPE_LABELS[v.fuelType] : "—"}</TableCell>
                 <TableCell className="hidden tabular-nums md:table-cell">{v.tankCapacityL ? `${v.tankCapacityL} L` : "—"}</TableCell>
                 <TableCell>

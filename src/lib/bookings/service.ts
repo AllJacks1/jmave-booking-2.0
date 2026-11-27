@@ -14,6 +14,7 @@ import {
   bookings,
   clients,
   drivers,
+  inquiries,
   payments,
   quotations,
   user,
@@ -30,6 +31,8 @@ import type { CurrentUser } from "@/lib/auth/session";
 import { effectiveStatus } from "@/lib/quotes/document";
 import type { QuoteResult } from "@/lib/quotes/engine";
 import { manilaToUtc } from "@/lib/time";
+import { bookingFieldsFromRequest } from "@/lib/public/quote-form";
+import { detailsSchema, searchSchema } from "@/lib/public/schema";
 import { checkAvailability } from "./availability";
 import { chargesFromImported, chargesFromQuoteResult, type ImportedQuotationData } from "./charges";
 import { computeLedger, hasReservationFee } from "./ledger";
@@ -115,6 +118,14 @@ function snapshot(b: BookingRow) {
   };
 }
 
+/** Booking fields from a stored public request payload (ignored if it no longer parses). */
+function requestFields(payload: unknown) {
+  const p = (payload ?? {}) as { search?: unknown; details?: unknown };
+  const search = searchSchema.safeParse(p.search);
+  const details = detailsSchema.safeParse(p.details);
+  return search.success && details.success ? bookingFieldsFromRequest(search.data, details.data) : null;
+}
+
 // ---------------------------------------------------------------------------
 // Convert an issued formal quotation into a booking
 // ---------------------------------------------------------------------------
@@ -139,6 +150,9 @@ export const convertToBooking = defineAction({
 
       const inputs = q.inputs as { destination?: string };
       const imported = q.imported ? (q.importedData as ImportedQuotationData | null) : null;
+      // A website request behind this quotation: copy what the client typed into the booking.
+      const [inq] = await tx.select().from(inquiries).where(eq(inquiries.quotationId, q.id)).for("update");
+      const fromRequest = inq ? requestFields(inq.payload) : null;
       const [b] = await tx
         .insert(bookings)
         .values({
@@ -152,9 +166,13 @@ export const convertToBooking = defineAction({
           startAt: q.startAt,
           endAt: q.endAt,
           destination: (imported ? imported.destination : inputs.destination?.trim()) || null,
+          ...(fromRequest ?? {}),
           createdBy: actor.id,
         })
         .returning();
+      if (inq && inq.status !== "rejected") {
+        await tx.update(inquiries).set({ status: "converted", reviewedBy: inq.reviewedBy ?? actor.id, reviewedAt: inq.reviewedAt ?? new Date() }).where(eq(inquiries.id, inq.id));
+      }
       const charges = q.imported ? chargesFromImported(imported) : chargesFromQuoteResult(q.result as QuoteResult);
       if (charges.length) {
         await tx.insert(bookingCharges).values(charges.map((c) => ({ ...c, bookingId: b.id, createdBy: actor.id })));

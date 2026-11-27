@@ -3,6 +3,7 @@ import { can, type Action, type Actor } from "@/lib/permissions";
 export type NavIcon =
   | "dashboard"
   | "quotes"
+  | "inquiries"
   | "bookings"
   | "calendar"
   | "board"
@@ -34,6 +35,7 @@ export type NavItem = {
  */
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard", permission: "quotes.manage", group: "work" },
+  { href: "/inquiries", label: "Booking requests", icon: "inquiries", permission: "inquiries.manage", group: "work" },
   { href: "/quotes", label: "Quotations", icon: "quotes", permission: "quotes.manage", group: "work" },
   { href: "/bookings", label: "Bookings", icon: "bookings", permission: "bookings.manage", group: "work" },
   { href: "/clients", label: "Clients", icon: "clients", permission: "clients.view", group: "work" },
