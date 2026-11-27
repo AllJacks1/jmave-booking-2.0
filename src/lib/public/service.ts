@@ -27,6 +27,7 @@ import { WEBSITE_DEAL_SOURCE } from "@/lib/rework/options";
 import type { LeadFacts } from "@/lib/rework/payload";
 import { getSettings } from "@/lib/settings/service";
 import { manilaToUtc, manilaYear } from "@/lib/time";
+import { log } from "@/lib/log";
 import { clientIp, rateKey, takeRateLimit, verifyTurnstile } from "./guard";
 import { publicBreakdown, publicCategory, publicQuoteForm, publicTotal, publicVehicleName, type PublicVehicleRow } from "./quote-form";
 import {
@@ -232,7 +233,7 @@ export async function submitInquiry(raw: unknown, rc: RequestContext): Promise<H
   const captcha = await verifyTurnstile(input.turnstileToken, ip);
   if (!captcha.ok) {
     if (captcha.reason === "not_configured") {
-      console.error(JSON.stringify({ svc: "web", level: "error", msg: "public booking refused: TURNSTILE_SECRET_KEY is not set" }));
+      log.error("public booking refused: TURNSTILE_SECRET_KEY is not set");
       return { status: 503, body: fail("Online booking is not available right now. Please call or message us.") };
     }
     return { status: 400, body: fail("Please complete the security check and try again.", { turnstileToken: ["Please complete the security check"] }) };

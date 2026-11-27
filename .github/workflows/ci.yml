@@ -1,0 +1,83 @@
+# Phase 5: lint, typecheck, unit + integration tests and the Playwright e2e
+# suite on every push and pull request, against a disposable Postgres.
+# No secrets are needed: test databases are throwaway, Sentry stays off
+# (no DSN), Turnstile uses Cloudflare's published test keys (playwright.config.ts).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        # Same major version as Railway Postgres.
+        image: postgres:18
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-password-not-a-secret
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      # Names must end in _test / _e2e: the reset helper refuses anything else.
+      TEST_DATABASE_URL: postgres://ci:ci-password-not-a-secret@localhost:5432/jmave_test
+      E2E_DATABASE_URL: postgres://ci:ci-password-not-a-secret@localhost:5432/jmave_e2e
+      BETTER_AUTH_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
+      APP_URL: http://localhost:3100
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Create test databases
+        run: |
+          for db in jmave_test jmave_e2e; do
+            PGPASSWORD=ci-password-not-a-secret psql -h localhost -U ci -d postgres -c "create database $db"
+          done
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit and integration tests
+        run: pnpm test
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: pnpm e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

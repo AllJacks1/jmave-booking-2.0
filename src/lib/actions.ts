@@ -14,10 +14,11 @@ import {
   type Action,
 } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
+import { errorFields, log } from "@/lib/log";
 
 export type ActionFailure = {
   ok: false;
-  status: 400 | 401 | 403 | 404 | 409 | 500;
+  status: 400 | 401 | 403 | 404 | 409 | 429 | 500;
   error: string;
   fieldErrors?: Record<string, string[] | undefined>;
 };
@@ -44,8 +45,8 @@ export function defineAction<S extends z.ZodType, T>(opts: {
   permission: Action;
   input: S;
   handler: (actor: CurrentUser, input: z.infer<S>) => Promise<T>;
-}): ActionRunner<z.input<S>, T> {
-  return async (actor, raw) => {
+}): ActionRunner<z.input<S>, T> & { readonly permission: Action } {
+  const runner: ActionRunner<z.input<S>, T> = async (actor, raw) => {
     try {
       if (actor?.mustChangePassword) {
         throw new ActionError(403, "Change your password first.");
@@ -65,6 +66,8 @@ export function defineAction<S extends z.ZodType, T>(opts: {
       return toFailure(err);
     }
   };
+  // Phase 5: the permission travels with the runner so a test can enumerate every action.
+  return Object.assign(runner, { permission: opts.permission });
 }
 
 /** Zod issues → { "business.mobile": ["…"] } (dot paths, first message first). */
@@ -87,6 +90,6 @@ export function toFailure(err: unknown): ActionFailure {
   if (err instanceof ActionError) {
     return { ok: false, status: err.status, error: err.message, fieldErrors: err.fieldErrors };
   }
-  console.error("Unhandled action error:", err instanceof Error ? err.message : err);
+  log.error("unhandled action error", errorFields(err));
   return { ok: false, status: 500, error: "Something went wrong. Please try again." };
 }

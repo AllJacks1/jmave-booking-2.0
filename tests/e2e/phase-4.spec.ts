@@ -141,9 +141,9 @@ test("the request appears in the staff inbox with a badge and a prefilled draft"
 
 test("embedding: allowed on the configured origin, refused on others", async ({ browser, request }) => {
   const res = await request.get("/book?embed=1");
-  expect(res.headers()["content-security-policy"]).toBe(`frame-ancestors 'self' ${ALLOWED}`);
+  expect(res.headers()["content-security-policy"]).toContain(`frame-ancestors 'self' ${ALLOWED}`);
   const staff = await request.get("/login");
-  expect(staff.headers()["content-security-policy"]).toBe("frame-ancestors 'self'");
+  expect(staff.headers()["content-security-policy"]).toMatch(/frame-ancestors 'self'(;|$)/);
 
   const base = test.info().project.use.baseURL!;
   for (const [origin, allowed] of [

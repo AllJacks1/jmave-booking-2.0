@@ -281,6 +281,9 @@ export const clients = pgTable(
     index("clients_email_lower_idx").on(sql`lower(${t.email})`),
     index("clients_full_name_trgm_idx").using("gin", t.fullName.op("gin_trgm_ops")),
     index("clients_fb_name_trgm_idx").using("gin", t.fbName.op("gin_trgm_ops")),
+    // Phase 5: client search matches email and phone anywhere in the value (ILIKE '%…%').
+    index("clients_email_trgm_idx").using("gin", t.email.op("gin_trgm_ops")),
+    index("clients_phone_trgm_idx").using("gin", t.phone.op("gin_trgm_ops")),
   ],
 );
 
@@ -382,6 +385,8 @@ export const quotations = pgTable(
     index("quotations_client_idx").on(t.clientId),
     index("quotations_revised_from_idx").on(t.revisedFromId),
     index("quotations_client_name_trgm_idx").using("gin", t.clientName.op("gin_trgm_ops")),
+    // Phase 5: the list search matches part of a number ("929" finds QTN-2026-929).
+    index("quotations_number_trgm_idx").using("gin", t.number.op("gin_trgm_ops")),
   ],
 );
 
@@ -486,6 +491,10 @@ export const bookings = pgTable(
     index("bookings_client_idx").on(t.clientId),
     index("bookings_start_idx").on(t.startAt),
     index("bookings_driver_idx").on(t.driverId),
+    // Phase 5: board / calendar / list windows filter on end_at too; list search by number and name.
+    index("bookings_end_idx").on(t.endAt),
+    index("bookings_number_trgm_idx").using("gin", t.number.op("gin_trgm_ops")),
+    index("bookings_client_name_trgm_idx").using("gin", t.clientName.op("gin_trgm_ops")),
   ],
 );
 

@@ -1,0 +1,11 @@
+# Never upload these with `railway up` (in addition to .gitignore).
+migration/source/
+.env
+.env.*
+!.env.example
+scripts/.scratch/
+.claude/
+node_modules/
+.next/
+playwright-report/
+test-results/

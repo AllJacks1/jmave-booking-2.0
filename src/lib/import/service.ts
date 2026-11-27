@@ -6,15 +6,17 @@ import { db } from "@/db/client";
 import { importRuns } from "@/db/schema";
 import { ActionError, defineAction } from "@/lib/actions";
 import { withAudit } from "@/lib/audit";
+import { errorFields, log } from "@/lib/log";
 import { requirePermission } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
 import { ImportFileError, parseWorkbookBuffer } from "./parse";
 import { planImport } from "./plan";
+import { checkWorkbookZip } from "./zip-check";
 import type { ImportPayload, ImportSummary } from "./types";
 
 export const MAX_IMPORT_BYTES = 40 * 1024 * 1024;
 
-/** Checks before parsing: Super Admin, `.xlsx`, size, zip signature. */
+/** Checks before parsing: Super Admin, `.xlsx`, size, zip signature, workbook entries, expanded size. */
 export function validateUpload(fileName: string, bytes: Uint8Array): string | null {
   if (!/\.xlsx$/i.test(fileName)) return "Only .xlsx files can be imported.";
   if (bytes.byteLength === 0) return "The file is empty.";
@@ -23,7 +25,8 @@ export function validateUpload(fileName: string, bytes: Uint8Array): string | nu
   if (!(bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04)) {
     return "The file is not a valid .xlsx workbook.";
   }
-  return null;
+  // Phase 5: the zip directory must look like a workbook and not expand past a sane size.
+  return checkWorkbookZip(bytes);
 }
 
 export type UploadResult =
@@ -54,7 +57,7 @@ export async function previewUpload(
     payload = await parseWorkbookBuffer(Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength));
   } catch (err) {
     const message = err instanceof ImportFileError ? err.message : "The workbook could not be read.";
-    if (!(err instanceof ImportFileError)) console.error("Import parse failed:", err instanceof Error ? err.message : "unknown");
+    if (!(err instanceof ImportFileError)) log.error("import parse failed", errorFields(err));
     const [run] = await db
       .insert(importRuns)
       .values({ fileName, fileSha256: sha, fileSize: bytes.byteLength, kind: "unknown", status: "failed", summary: {}, error: message, createdBy: actor.id })

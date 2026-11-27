@@ -48,7 +48,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/rates", label: "Rates", icon: "rates", permission: "rates.view", group: "admin" },
   { href: "/import", label: "Import", icon: "import", permission: "import.view", group: "admin" },
   { href: "/users", label: "Users", icon: "users", permission: "users.view", group: "admin" },
-  { href: "/audit", label: "Audit log", icon: "audit", permission: "audit.view", comingIn: "5", group: "admin" },
+  { href: "/audit", label: "Audit log", icon: "audit", permission: "audit.view", group: "admin" },
   { href: "/settings", label: "Settings", icon: "settings", permission: "settings.view", group: "admin" },
 ];
 

@@ -13,15 +13,14 @@ import type { DbOrTx } from "@/db/client";
 import { publicRateEvents } from "@/db/schema";
 
 export const SUBMISSIONS_PER_HOUR = 5;
+/** Price/availability look-ups per rolling hour per IP (Phase 5): generous, the form re-prices as dates change. */
+export const QUOTES_PER_HOUR = 300;
+/** First-run setup attempts per rolling hour per IP (Phase 5). */
+export const SETUP_ATTEMPTS_PER_HOUR = 10;
 const HOUR_MS = 3_600_000;
 
-/** Client IP on Railway: first hop of `x-forwarded-for` (else `x-real-ip`). */
-export function clientIp(headers: Headers): string | null {
-  const xff = headers.get("x-forwarded-for");
-  const first = xff?.split(",")[0]?.trim();
-  if (first) return first.slice(0, 100);
-  return headers.get("x-real-ip")?.trim().slice(0, 100) || null;
-}
+/** Client IP: stamped by the proxy from the trusted end of `x-forwarded-for` (src/lib/security/client-ip.ts). */
+export { clientIp } from "@/lib/security/client-ip";
 
 /** Hashed so the table never stores raw IPs. */
 export function rateKey(scope: string, ip: string | null): string {

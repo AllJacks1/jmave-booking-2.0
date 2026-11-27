@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 export const STATUS_CLASSES: Record<BookingStatus | "block", string> = {
   pending_reservation:
     "border-amber-500 text-amber-950 dark:text-amber-50 bg-[repeating-linear-gradient(135deg,var(--color-amber-200)_0_6px,var(--color-amber-100)_6px_12px)] dark:bg-[repeating-linear-gradient(135deg,var(--color-amber-800)_0_6px,var(--color-amber-950)_6px_12px)]",
-  confirmed: "border-sky-600 bg-sky-600 text-white",
-  released: "border-emerald-600 bg-emerald-600 text-white",
+  confirmed: "border-sky-700 bg-sky-700 text-white",
+  released: "border-emerald-700 bg-emerald-700 text-white",
   returned: "border-violet-600 bg-violet-600 text-white",
   closed: "border-slate-400 bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100",
   cancelled: "border-border bg-background text-muted-foreground line-through",

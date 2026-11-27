@@ -3,8 +3,12 @@
  * Graceful shutdown on SIGTERM / SIGINT: stop taking jobs, finish the
  * current ones, close the database pools.
  */
+// Sentry first, so start-up errors are reported too (Phase 5).
+import { flushWorkerSentry, initWorkerSentry, reportWorkerError } from "./sentry";
 import { closeDb } from "@/db/client";
 import { startWorker } from "./app";
+
+initWorkerSentry();
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -24,6 +28,7 @@ async function main() {
     try {
       await worker.stop();
       await closeDb();
+      await flushWorkerSentry();
       process.exit(0);
     } catch (err) {
       console.error("worker: shutdown failed:", err instanceof Error ? err.message : err);
@@ -34,7 +39,9 @@ async function main() {
   process.on("SIGINT", () => void shutdown("SIGINT"));
 }
 
-main().catch((err: unknown) => {
+main().catch(async (err: unknown) => {
   console.error("worker: failed to start:", err instanceof Error ? err.message : err);
+  reportWorkerError("worker failed to start", { error: err instanceof Error ? err.message : String(err) });
+  await flushWorkerSentry();
   process.exit(1);
 });

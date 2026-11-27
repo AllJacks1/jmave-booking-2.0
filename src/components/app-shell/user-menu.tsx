@@ -44,7 +44,9 @@ export function UserMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-9 gap-2 px-2" aria-label="User menu">
+        <Button variant="ghost" className="h-9 gap-2 px-2">
+          {/* Phase 5 a11y: the accessible name must contain the visible name (WCAG 2.5.3). */}
+          <span className="sr-only">User menu</span>
           <Avatar className="size-7">
             <AvatarFallback className="text-xs">{initials(displayName)}</AvatarFallback>
           </Avatar>

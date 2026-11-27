@@ -1,6 +1,6 @@
 # J-MaVe Booking 2.0 — Master Plan
 
-Status: **approved for build**. Last edited: 2026-11-23.
+Status: **approved for build**. Last edited: 2026-11-27.
 
 ## 1. Goal
 
@@ -60,6 +60,9 @@ All checks live in `src/lib/permissions.ts` as a single table: `can(user, action
 | `web` | Next.js app (staff app + public pages + API) | `pnpm build && pnpm start` |
 | `worker` | Node process running `pg-boss` jobs | Rework deliveries, emails, expiry sweeps. Same repo, entry `src/worker/index.ts`. Added in Phase 3. |
 | `postgres` | Railway Postgres | Needs the `btree_gist` extension (Phase 2a). |
+| `backup` | Cron service (Phase 5), `ops/backup/Dockerfile` (postgres:18 + aws-cli) | Nightly `pg_dump` to an S3-compatible bucket at 02:00 Manila; off until `BACKUP_S3_*` is set. |
+
+Live names (2026-11-27): the web service is **`jmave-booking-2.0`** (deploys GitHub `main`). Environments: `production` (app, Postgres, backup; **no worker yet**) and `staging` (app, Postgres, worker, backup; invented data). See `.railway/railway.ts`, `docs/ops/staging.md`, `docs/ops/backups.md`.
 
 ### Environment variables (`.env.example` lists all, values empty)
 
@@ -75,6 +78,13 @@ All checks live in `src/lib/permissions.ts` as a single table: `can(user, action
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | 4 | Spam protection on public page |
 | `PUBLIC_EMBED_ORIGINS` | 4 | Comma list of origins allowed to iframe `/book` (CSP `frame-ancestors`) |
 | `PUBLIC_BOOK_HOST` | 4 | Public booking hostname(s), e.g. `book.jmavecars.com`: every path there is served from `/book/*`; staff routes are not served |
+| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN` | 5 | Error reports (web server / browser). Worker: its own `SENTRY_DSN` on Railway (`SENTRY_WORKER_DSN` locally). Empty = off |
+| `SENTRY_ENVIRONMENT`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | 5 | `production` / `staging` |
+| `SENTRY_AUTH_TOKEN` | 5 | Optional: source-map upload at build time |
+| `SENTRY_TRACES_SAMPLE_RATE`, `LOG_LEVEL` | 5 | Optional tuning (default 0 / info) |
+| `TRUSTED_PROXY_HOPS` | 5 | Proxies that append to `X-Forwarded-For` (default 1 = Railway edge; 2 behind a CDN) |
+| `BACKUP_S3_ENDPOINT`, `BACKUP_S3_BUCKET`, `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY`, `BACKUP_S3_REGION`, `BACKUP_S3_PREFIX` | 5 | `backup` cron service only |
+| `SEED_PASSWORD` | 5 | Staging only: password of the seeded staff accounts |
 
 ### Folder layout
 
@@ -286,8 +296,22 @@ External calls (Rework, email) never run inside a user request. The request writ
 | 2026-11-27 | A request creates, in one transaction: inquiry (`REQ-{Manila year}-NNNN`, sequence `REQ-{year}`), client, draft formal quotation (no consultant; the issuer becomes the consultant), a Rework outbox row, audit rows (actor null). It re-checks availability under an advisory lock per car; a car taken meanwhile → 409. Nothing holds a car. Issuing the draft sets the inquiry `quoted`; converting sets `converted` and copies addresses, passengers, luggage, itinerary (With Driver drop-off prefixed), license no., IDs and `source_channel = website` into the booking. Reject (Sales+, reason) cancels a still-draft quotation. New permissions `inquiries.manage` and `rework.send` (Sales+). |
 | 2026-11-27 | Rework: the outbox stores the **mapped** lead (`{ lead, source, reference }`); the worker posts it to `REWORK_WEBHOOK_URL?token=…` built only in `src/lib/rework/endpoint.ts`; errors and response bodies pass through `redactToken` (raw, URL-encoded and `token=` forms) and the outbox's own redaction; any 2xx is success; `response = { status, body ≤ 2 KB }`. Option values live in setting `rework_option_map` (defaults = our labels until Rework's exact values are known; empty = field not sent; car type tries `body:category` then `body`); `rework_date_unit` default `seconds`; birthday is sent as Manila midnight. `custom_government_id` (single option) = the first ID with a mapped value. Staff-intake trigger: clients added inline on a quotation get `source = quote_form`; their first issued formal quotation sends a lead when `rework_send_staff_intakes` is on and `rework_sent_at` is null. Manual "Send to Rework" on a client: 409 if already sent unless "Send again". "Send test lead" (Super Admin) goes through the outbox with invented data. `updateSettings` now saves only the general keys; Rework keys have their own action. |
 | 2026-11-27 | Attribution: UTM, `fbclid`/`gclid`/`ttclid`, an extendable list of ad-id params (`AD_ID_PARAMS`), `_fbp`, referrer and landing URL, captured on the first visit into `sessionStorage`. The embed snippet forwards the parent page's query string, `ref` (its referrer), `landing` and `fbp` on the iframe URL, and listens for `jmave-book:height` / `jmave-book:top` messages from the booking origin. |
+| 2026-11-27 | Audit viewer `/audit` (Admin+): filters actor (or System), record type, action prefix, record id, Manila dates; entry page with field-level before → after (`src/lib/audit-log/diff.ts`). A static test (`audit-log/coverage.test.ts`) requires every `defineAction` to reach `withAudit` unless exempt with a reason (read-only previews/searches; draft autosave — issuing writes the audited result). Quotation internal notes are now audited (`quotation.notes`). |
+| 2026-11-27 | `defineAction` runners carry `.permission`; an integration test imports all 58 and checks 401 signed out, 403 for must-change-password and inactive users, and per role 403 exactly where `PERMISSIONS` denies. `ActionResult` gains status **429**. |
+| 2026-11-27 | Security headers: CSP set in `src/proxy.ts` with a per-request nonce + `'strict-dynamic'` for scripts; `<style>` elements nonce-only (next-themes and `get-nonce` get the nonce; Sonner's fixed stylesheet allowed by SHA-256, re-checked by a test); `style-src-attr 'unsafe-inline'` for React style props only; HSTS over HTTPS; `no-referrer` on `/q/*`. Static headers (nosniff, Referrer-Policy, Permissions-Policy, COOP) in `next.config.ts`. The root layout reads the nonce, so every page renders per request. |
+| 2026-11-27 | Client IP for every rate limit = the trusted right-hand end of `X-Forwarded-For` (`TRUSTED_PROXY_HOPS`, default 1), stamped by the proxy as `x-client-ip` (client-sent value overwritten); Better Auth reads `x-client-ip`. New limits: `/setup` 10/hour/IP (429), `POST /api/public/quote` 300/hour/IP. |
+| 2026-11-27 | CSRF: cookie-authenticated route handlers that change data check Origin / Sec-Fetch-Site (`src/lib/security/origin.ts`; today only `POST /api/import`). Better Auth cookies: HttpOnly, SameSite=Lax, Secure when `APP_URL` is https. |
+| 2026-11-27 | Import upload: the zip central directory must contain `[Content_Types].xml` + `xl/workbook.xml`, no `..`/absolute/backslash entry names, and expand to ≤ 400 MB, checked before exceljs. A zip that is not a workbook is refused without storing a run. |
+| 2026-11-27 | Logging: `src/lib/log.ts` JSON lines (web and worker) with scrubbing (`src/lib/observability/scrub.ts`: emails, PH phones, `token=`, share-token paths, env secrets, PII/secret keys); a test forbids stray `console.*`. Request id: kept from `x-request-id` / `x-railway-request-id` when valid, else a UUID; echoed in the response and tagged on Sentry events. |
+| 2026-11-27 | Sentry: `@sentry/nextjs` (server, edge, browser; no replay, no feedback widget) and `@sentry/node` in the worker. v11 `dataCollection` turns off user info, cookies, bodies, query strings, DB data, queue args, stack locals; `beforeSend` scrubs the rest; user = id + role only. Source maps upload only with `SENTRY_AUTH_TOKEN`. Worker errors are grouped by message. Rework transport no longer follows redirects (`redirect: "manual"`). |
+| 2026-11-27 | Backups: Railway volume backups need a Pro workspace (refused on trial); owner accepted relying on a nightly off-site `pg_dump` instead. It runs as a separate cron service `backup` (postgres:18 image, because `pg_dump` must match server 18), not in the Node worker as the brief suggested. Restores strip Railway's private `pg_attver` column option so dumps load into stock Postgres. Never restore production data into staging. |
+| 2026-11-27 | Staging = Railway environment forked from production with its own Postgres/volume, worker and backup; seeded only by `pnpm db:seed:staging` (`src/lib/seed/staging.ts`, invented data through the real services; refuses outside staging/local). Its TCP proxy is off except during reseeds/restore drills. |
+| 2026-11-27 | Performance: trigram indexes on quotation/booking numbers, booking client names, client email/phone; btree on `bookings.end_at` (migration `0007_phase_5`). With ~3 years of invented volume (6,000 quotations, 1,500 bookings, 3,000 clients, 30,000 audit rows) every list/search/audit query is < 20 ms, board ~25 ms, month calendar < 5 ms. |
+| 2026-11-27 | Owner answers to PLAN §8: Q1–Q12 keep the defaults as built (rounding line, fuel switch default on, FORMULA current with QP FORMULA as draft, pick-up table unused, manual tiers / no point expiry / 1-year membership, fuel-shortage formula, Van ₱500/hr, City Saver flat per booking, holiday driver fee ×2, OT premium once, 60-min grace, expired card renewed on next return). The 24h-tier night-differential rule (2026-11-23) is confirmed. Rework date unit stays open until a real test lead. |
 
 ## 8. Open questions (build with the default; confirm with the owner when possible)
+
+**2026-11-27: Q1–Q12 answered by the owner — every default below is kept (§7).** Still open: the Rework date unit (`seconds` until a real test lead confirms it).
 
 | # | Question | Default used until answered |
 |---|---|---|
@@ -479,3 +503,80 @@ Append one entry per session. Newest last.
   - The outbox's own error redaction turns `?token=***` into `?token=[redacted]` in `last_error` (both hide the token).
 - Decisions made (also added to §7): `PUBLIC_BOOK_HOST` + proxy rewrite; runtime `frame-ancestors`; vehicle category/seats/listed and hiding uncategorised cars; public price without the new-client discount, fees to be confirmed, With Driver km estimate; public window limits; Turnstile in-request, 503 without a secret, rate limit on hashed IP; client matching and email collision; one-transaction request + status hooks + booking fields + reject; Rework mapped payload in the outbox, redaction, option map/unit defaults, `quote_form` staff-intake trigger, manual send/again, test lead, split settings action; attribution capture and the embed snippet.
 - Deployed: no.
+
+### 2026-11-27 — Phase 5 — Hardening
+- Built:
+  - **Audit viewer:**
+    - `/audit` and `/audit/[id]` (Admin+). Filters: actor or System, record type, action prefix, record id, Manila dates. The entry page shows a field-level before → after, unchanged fields on request, raw JSON, and links to the record and its full history. Live in the menu.
+    - The audit coverage test found one unaudited write (quotation internal notes); it is fixed.
+  - **Security review** (`docs/security-review.md`). The `/security-review` run found no high-confidence findings. Hardening added:
+    - per-role permission enumeration of all 58 actions;
+    - static scans of server actions, route handlers and `console.*`;
+    - CSP with nonces, nonce-only style elements and the Sonner hash;
+    - HSTS and the other static security headers;
+    - cookie flags, and a CSRF check on the import route;
+    - zip-directory checks on upload;
+    - trusted client IP (`x-client-ip`);
+    - rate limits on `/setup` and the public quote endpoint;
+    - share-token tests;
+    - the Rework transport no longer follows redirects.
+  - **Observability:**
+    - Sentry for web (server, edge, browser) and worker, with collection off plus scrubbing;
+    - structured JSON logs (`src/lib/log.ts`);
+    - `x-request-id` on every response and Sentry event.
+    - Verified with a real staging worker event: `environment=staging`, no user data.
+  - **Backups** (`docs/ops/backups.md`):
+    - `backup` cron service (postgres:18 + aws-cli, 02:00 Manila) in production and staging;
+    - `ops/backup/restore-check.sh`.
+    - Restore test done on staging: 28 tables, 0 row-count mismatches, exclusion constraint present.
+  - **Staging** (`docs/ops/staging.md`): Railway environment `staging` (own Postgres and volume, worker, backup). Seeded with invented data by `pnpm db:seed:staging` through the real services. Own secrets and Turnstile test keys; health check on.
+  - **CI:** `.github/workflows/ci.yml` runs lint, typecheck, unit and integration tests, and Playwright e2e against a `postgres:18` service container, on every push and PR.
+  - **E2E** (`tests/e2e/phase-5.spec.ts`):
+    - Super Admin rate-card copy and activate with audit diff;
+    - Admin creates and deactivates an Operations user, with audit rows;
+    - Sales gets 403 on `/audit`;
+    - security headers, cookie flags and CSRF;
+    - axe scans of 14 main pages, with no serious or critical violations;
+    - keyboard sign-in and menu navigation;
+    - board, calendar and PDF timings.
+    - The other role journeys live in the earlier phase specs; the spec header maps them.
+  - **Accessibility fixes found by axe:**
+    - The user-menu button's accessible name now contains the visible name (WCAG 2.5.3).
+    - `--muted-foreground` darkened from 0.556 to 0.48 (4.5:1 on `--muted`).
+    - Destructive badges use red-700 text.
+    - Confirmed/released and Out today/Rented chips use sky/emerald-700.
+    - Scrollable `<pre>` blocks are focusable.
+  - **Performance:** migration `0007_phase_5` (trigram and `end_at` indexes) and a volume test (see §7).
+  - **User guide:** `docs/user-guide.md`, one section per role, with 20 staging screenshots in `docs/user-guide/`.
+  - **Open questions:** Q1–Q12 answered by the owner (defaults kept) and the night-differential rule confirmed (§7).
+- Results: `pnpm lint` clean, `pnpm typecheck` clean, `pnpm test` 712/712 (45 files), `pnpm e2e` 36 passed (4 skipped: the user-guide screenshot spec, which runs only on request). Volume test: board ~25 ms, month calendar < 5 ms, lists/search/audit < 20 ms. E2E perf test (board, calendar, PDF) well under its limits.
+- Not done / deferred:
+  - **Off-site dumps are off.** There is no bucket yet. The owner creates one and sets `BACKUP_S3_*` on the `backup` service; then do the S3 leg of the restore test (backups.md "Turn it on").
+  - **Production is not redeployed with Phase 5.** Production runs Phase 4 from GitHub `main`. Phase 5 reaches it when `phase-5` is merged to `main`. Migration `0007` then runs on pre-deploy.
+  - **Web Sentry not tested with a real event.** The DSNs are set on production and staging, but a real web error event has not been triggered. The first one should be checked.
+  - **Rework date unit** still unconfirmed (needs a real test lead).
+- Known issues:
+  - A returned booking with a balance shows **Close booking**. Closing is refused by the rules; the button could be hidden. Seen in the staging screenshots.
+  - The Decisions log table in §7 is split by a blank line (from Phase 4), so Markdown shows it as two tables.
+- Decisions made (also added to §7): audit viewer and coverage rule; runner permission tags and 429; CSP and header design; trusted client IP; CSRF and cookie flags; upload zip checks; logging, request ids and Sentry data collection; backups as a separate cron service with the `pg_attver` strip and no production data in staging; staging layout and seed; performance indexes; owner answers to §8.
+- Deployed:
+  - staging: yes, https://jmave-booking-20-staging-124dd0c5.up.railway.app (web, worker and backup).
+  - production: `backup` cron only, plus Sentry variables (no app redeploy).
+
+#### Go-live checklist (status 2026-11-27)
+
+| Item | Status |
+|---|---|
+| Security review findings fixed or accepted in writing | ✅ (§7, `docs/security-review.md`; risk 4 accepted by the owner) |
+| Restore test done and documented | ✅ staging dump → scratch DB (`docs/ops/backups.md`); ⏳ S3 leg once a bucket exists |
+| CI runs lint, typecheck, unit, e2e on every push | ✅ workflow added; ⏳ first GitHub run happens after the push |
+| Staging exists with invented data only | ✅ |
+| User guide covers every role | ✅ |
+| Off-site nightly backups active | ⏳ owner: bucket and `BACKUP_S3_*` |
+| Production on Phase 5 code (merge `phase-5` → `main`) | ⏳ |
+| Production **worker** service (outbox: emails, Rework leads; nightly sweeps) | ❌ missing in production. Create it as on staging (`.railway/railway.ts`) |
+| Production health check `/api/health` | ⏳ set on staging only |
+| Production variables: `TURNSTILE_*` (public requests are refused with 503 without them), `RESEND_API_KEY`/`EMAIL_FROM`, `REWORK_WEBHOOK_*`, `PUBLIC_BOOK_HOST`, `PUBLIC_EMBED_ORIGINS` | ⏳ owner |
+| Custom domains (app + `book.`) and DNS | ⏳ owner |
+| First Super Admin on production via `/setup`, then import both workbooks | ⏳ owner (production state not checked here) |
+| Rework test lead and date unit | ⏳ owner |

@@ -61,8 +61,14 @@ export const auth = betterAuth({
   },
   advanced: {
     database: { generateId: "uuid" },
-    // Railway terminates TLS and forwards the client IP.
-    ipAddress: { ipAddressHeaders: ["x-forwarded-for"] },
+    // Phase 5: explicit cookie flags. Secure whenever the app runs on HTTPS
+    // (Railway); HttpOnly + SameSite=Lax always (CSRF defence with the
+    // origin checks on server actions and route handlers).
+    useSecureCookies: (process.env.APP_URL ?? "").startsWith("https://"),
+    defaultCookieAttributes: { httpOnly: true, sameSite: "lax", path: "/" },
+    // Phase 5: the proxy stamps the trusted client IP (last x-forwarded-for
+    // hop, src/lib/security/client-ip.ts); a client-sent header cannot spoof it.
+    ipAddress: { ipAddressHeaders: ["x-client-ip"] },
   },
   databaseHooks: {
     session: {

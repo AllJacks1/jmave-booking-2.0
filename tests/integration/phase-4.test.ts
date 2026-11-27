@@ -84,7 +84,8 @@ function submission(over: Partial<SubmitInput> = {}): SubmitInput {
   };
 }
 
-const headers = (ip = "203.0.113.10") => new Headers({ "x-forwarded-for": `${ip}, 10.0.0.1`, "user-agent": "Vitest Invented UA" });
+// Phase 5: the proxy stamps `x-client-ip` (trusted end of x-forwarded-for); services read it.
+const headers = (ip = "203.0.113.10") => new Headers({ "x-forwarded-for": `198.51.100.99, ${ip}`, "x-client-ip": ip, "user-agent": "Vitest Invented UA" });
 
 async function submit(over: Partial<SubmitInput> = {}, ip?: string) {
   return submitInquiry(submission(over), { headers: headers(ip), now: NOW });

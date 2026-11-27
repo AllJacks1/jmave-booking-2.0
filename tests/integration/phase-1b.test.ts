@@ -116,8 +116,14 @@ describe.skipIf(!hasTestDb)("Phase 1b against the database", () => {
       expect(validateUpload("a.xlsx", new Uint8Array([1, 2, 3, 4]))).toMatch(/not a valid/);
       expect(validateUpload("a.xlsx", new Uint8Array(41 * 1024 * 1024))).toMatch(/larger/);
       const sa = await makeUser("super_admin");
-      const bad = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
-      const r = await previewUpload(sa, "broken.xlsx", bad);
+      // Phase 5: a zip that is not a workbook is refused before parsing (no run stored).
+      const notWorkbook = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
+      expect(await previewUpload(sa, "broken.xlsx", notWorkbook)).toMatchObject({ ok: false, status: 400 });
+      expect(await db.select().from(importRuns)).toHaveLength(0);
+      // A workbook whose directory is fine but whose contents are corrupt is stored as failed.
+      const corrupt = new Uint8Array(await bookingWorkbook());
+      corrupt.fill(0xff, 100, Math.min(corrupt.length - 2000, 6000));
+      const r = await previewUpload(sa, "corrupt.xlsx", corrupt);
       expect(r).toMatchObject({ ok: false, status: 400 });
       const [run] = await db.select().from(importRuns);
       expect(run.status).toBe("failed");

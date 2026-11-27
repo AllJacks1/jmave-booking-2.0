@@ -1,10 +1,10 @@
 import "server-only";
-import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, gte, ilike, inArray, lt, or, sql, type SQL } from "drizzle-orm";
 import { db, type DbOrTx } from "@/db/client";
 import { clients, inquiries, loyaltyAccounts, quotations, rateCards, user, vehicles, type QuotationRow } from "@/db/schema";
 import { ActionError, defineAction } from "@/lib/actions";
 import { withAudit } from "@/lib/audit";
+import { newShareToken } from "./share-token";
 import { can } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
 import { nextQuotationNumber } from "@/lib/numbering";
@@ -282,7 +282,7 @@ export const saveDraft = defineAction({
 });
 
 function shareToken() {
-  return randomBytes(32).toString("base64url");
+  return newShareToken();
 }
 
 export const issueQuotation = defineAction({
@@ -452,9 +452,14 @@ export const updateNotes = defineAction({
   permission: "quotes.manage",
   input: quoteIdSchema.extend({ notes: quoteFormSchema.shape.notes }),
   handler: async (actor, { id, notes }) => {
-    const [row] = await db.update(quotations).set({ notes: notes || null }).where(eq(quotations.id, id)).returning({ id: quotations.id });
-    if (!row) throw new ActionError(404, "Quotation not found.");
-    return { id };
+    return db.transaction(async (tx) => {
+      const [cur] = await tx.select({ notes: quotations.notes }).from(quotations).where(eq(quotations.id, id)).for("update");
+      if (!cur) throw new ActionError(404, "Quotation not found.");
+      await tx.update(quotations).set({ notes: notes || null }).where(eq(quotations.id, id));
+      // Phase 5: internal notes are audited too, so every quotation write has a trail.
+      await withAudit(actor, "quotation.notes", "quotation", id, { notes: cur.notes }, { notes: notes || null }, tx);
+      return { id };
+    });
   },
 });
 

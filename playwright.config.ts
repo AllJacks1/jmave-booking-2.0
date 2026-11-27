@@ -39,6 +39,9 @@ export default defineConfig({
       TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
       PUBLIC_EMBED_ORIGINS: "http://127.0.0.1:3199",
       PUBLIC_BOOK_HOST: "book.e2e.test",
+      // Phase 5: never report e2e errors to Sentry (DSNs may be in .env.local).
+      SENTRY_DSN: "",
+      NEXT_PUBLIC_SENTRY_DSN: "",
     },
   },
 });

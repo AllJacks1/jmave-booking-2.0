@@ -57,7 +57,7 @@ export function EmbedSnippet({ bookUrl, origins }: { bookUrl: string | null; ori
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
-        <pre className="max-h-64 overflow-auto rounded-lg bg-muted p-3 text-xs">{code}</pre>
+        <pre tabIndex={0} aria-label="Embed code" className="max-h-64 overflow-auto rounded-lg bg-muted p-3 text-xs">{code}</pre>
         <div>
           <Button
             type="button"

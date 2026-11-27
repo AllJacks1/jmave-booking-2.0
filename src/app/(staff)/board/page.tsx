@@ -29,8 +29,8 @@ export const metadata: Metadata = { title: "Movement board" };
 
 const DAY_STATUS_CLASSES: Record<DayStatus, string> = {
   return: "border-violet-600 bg-violet-600 text-white",
-  out_today: "border-emerald-600 bg-emerald-600 text-white",
-  rented: "border-sky-600 bg-sky-600 text-white",
+  out_today: "border-emerald-700 bg-emerald-700 text-white",
+  rented: "border-sky-700 bg-sky-700 text-white",
   blocked: "border-zinc-500 bg-zinc-400 text-zinc-950 dark:bg-zinc-600 dark:text-zinc-50",
   pending:
     "border-amber-500 text-amber-950 dark:text-amber-50 bg-[repeating-linear-gradient(135deg,var(--color-amber-200)_0_6px,var(--color-amber-100)_6px_12px)] dark:bg-[repeating-linear-gradient(135deg,var(--color-amber-800)_0_6px,var(--color-amber-950)_6px_12px)]",

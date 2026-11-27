@@ -55,7 +55,7 @@ describe("proxy", () => {
     vi.stubEnv("PUBLIC_EMBED_ORIGINS", "https://www.jmave.test");
     const home = proxy(req("https://book.example.test/?embed=1&utm_source=fb", "book.example.test"));
     expect(home.headers.get("x-middleware-rewrite")).toBe("https://book.example.test/book?embed=1&utm_source=fb");
-    expect(home.headers.get("content-security-policy")).toBe("frame-ancestors 'self' https://www.jmave.test");
+    expect(home.headers.get("content-security-policy")).toMatch(/frame-ancestors 'self' https:\/\/www\.jmave\.test(;|$)/);
     const login = proxy(req("https://book.example.test/login", "book.example.test"));
     expect(login.headers.get("x-middleware-rewrite")).toBe("https://book.example.test/book/login");
     expect(proxy(req("https://book.example.test/api/auth/get-session", "book.example.test")).status).toBe(404);
@@ -67,9 +67,12 @@ describe("proxy", () => {
     vi.stubEnv("PUBLIC_EMBED_ORIGINS", "https://www.jmave.test");
     const book = proxy(req("https://app.example.test/book", "app.example.test"));
     expect(book.status).toBe(200);
-    expect(book.headers.get("content-security-policy")).toBe("frame-ancestors 'self' https://www.jmave.test");
+    expect(book.headers.get("content-security-policy")).toMatch(/frame-ancestors 'self' https:\/\/www\.jmave\.test(;|$)/);
+    expect(book.headers.get("content-security-policy")).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic'/);
+    expect(book.headers.get("x-request-id")).toBeTruthy();
     const dash = proxy(req("https://app.example.test/dashboard", "app.example.test"));
     expect(dash.status).toBe(307);
+    expect(dash.headers.get("content-security-policy")).toMatch(/frame-ancestors 'self'(;|$)/);
     expect(proxy(req("https://app.example.test/api/public/inquiries", "app.example.test")).status).toBe(200);
   });
 });

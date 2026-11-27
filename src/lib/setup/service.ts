@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { type ActionResult, toFailure, ActionError, fieldErrorsFromZod } from "@/lib/actions";
 import { withAudit } from "@/lib/audit";
+import { rateKey, SETUP_ATTEMPTS_PER_HOUR, takeRateLimit } from "@/lib/public/guard";
 import { ensureDefaultSettings } from "@/lib/settings/service";
 import { countUsers, insertUserWithPassword } from "@/lib/users/service";
 import { setupSchema, type SetupInput } from "./schema";
@@ -29,9 +30,15 @@ export async function isSetupOpen(): Promise<boolean> {
 export async function runSetup(
   raw: SetupInput,
   expectedToken = process.env.SETUP_TOKEN,
+  /** Client IP (hashed for the Phase 5 rate limit); null in tests and scripts. */
+  ip: string | null = null,
 ): Promise<ActionResult<{ userId: string }>> {
   try {
     if (!(await isSetupOpen())) throw new ActionError(404, "Not found.");
+    // Phase 5: limit token guesses per IP (rolling hour).
+    if (!(await takeRateLimit(db, rateKey("setup", ip), new Date(), SETUP_ATTEMPTS_PER_HOUR))) {
+      throw new ActionError(429, "Too many setup attempts. Try again in an hour.");
+    }
     const parsed = setupSchema.safeParse(raw);
     if (!parsed.success) {
       return {

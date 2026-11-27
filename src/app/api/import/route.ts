@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { MAX_IMPORT_BYTES, previewUpload } from "@/lib/import/service";
+import { isSameOriginRequest } from "@/lib/security/origin";
 
 // Parsing the booking workbook takes a few seconds and ~700 MB.
 export const maxDuration = 120;
 
 /** POST multipart `file` → parse, store a previewed run, return its id. Super Admin only. */
 export async function POST(request: Request) {
+  // CSRF (Phase 5): cookie-authenticated upload, so refuse cross-site posts.
+  if (!isSameOriginRequest(request.headers, request.url)) {
+    return NextResponse.json({ error: "Cross-site request refused." }, { status: 403 });
+  }
   const actor = await getCurrentUser();
   if (!actor) return NextResponse.json({ error: "You are not signed in." }, { status: 401 });
 

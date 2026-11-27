@@ -18,6 +18,7 @@ import { db } from "@/db/client";
 import { emailHandler } from "@/lib/email/outbox-handler";
 import type { EmailTransport } from "@/lib/email/types";
 import { expireLoyalty, expireQuotations } from "@/lib/jobs/nightly";
+import { makeLogger } from "@/lib/log";
 import { processOutbox, type OutboxHandlers } from "@/lib/outbox/dispatch";
 import { OUTBOX_CHANNEL } from "@/lib/outbox/enqueue";
 import { reworkConfigStatus } from "@/lib/rework/endpoint";
@@ -25,6 +26,7 @@ import { reworkHandler, type ReworkTransport } from "@/lib/rework/outbox-handler
 import { resolveAttachment } from "./attachments";
 import { resendTransport } from "./resend";
 import { reworkTransport } from "./rework";
+import { reportWorkerError } from "./sentry";
 
 export const QUEUES = {
   dispatch: "outbox-dispatch",
@@ -37,8 +39,13 @@ export const TIME_ZONE = "Asia/Manila";
 
 type Log = (msg: string, extra?: Record<string, unknown>) => void;
 
-const log: Log = (msg, extra) => console.log(JSON.stringify({ at: new Date().toISOString(), svc: "worker", msg, ...extra }));
-const logError: Log = (msg, extra) => console.error(JSON.stringify({ at: new Date().toISOString(), svc: "worker", level: "error", msg, ...extra }));
+// Phase 5: JSON lines through the shared scrubbing logger; errors also go to Sentry (when configured).
+const logger = makeLogger("worker");
+const log: Log = (msg, extra) => logger.info(msg, extra);
+const logError: Log = (msg, extra) => {
+  logger.error(msg, extra);
+  reportWorkerError(msg, extra);
+};
 
 function message(err: unknown): string {
   // Message only: error objects from the driver can carry connection details.

@@ -22,6 +22,8 @@ export function reworkTransport(env: ReworkEnv = process.env, fetchImpl: typeof 
           headers: { "Content-Type": "application/json", Accept: "application/json, text/plain, */*", "Idempotency-Key": `outbox-${idempotencyKey}` },
           body: JSON.stringify(lead),
           signal: AbortSignal.timeout(20_000),
+          // Phase 5: never follow a redirect — it would carry the ?token= URL to another host.
+          redirect: "manual",
         });
       } catch (err) {
         // Network errors can echo the request URL: never let the token through.
