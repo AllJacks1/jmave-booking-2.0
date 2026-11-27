@@ -7,6 +7,7 @@ import { QuoteStatusBadge } from "@/components/quotes/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bookingForQuotation } from "@/lib/bookings/queries";
+import { inquiryForQuotation } from "@/lib/inquiries/service";
 import { can } from "@/lib/permissions";
 import { fmtDateTime, quoteText } from "@/lib/quotes/document";
 import { quotationDeliveries } from "@/lib/quotes/email";
@@ -26,7 +27,20 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const q = await getQuotation(id);
   if (!q) notFound();
-  const settings = await getSettings();
+  const [settings, request] = await Promise.all([getSettings(), inquiryForQuotation(q.id)]);
+  const requestBanner = request ? (
+    <Alert data-testid="from-request">
+      <AlertTitle>
+        From website request{" "}
+        <Link href={`/inquiries/${request.id}`} className="text-primary underline">
+          {request.reference}
+        </Link>
+      </AlertTitle>
+      <AlertDescription className="whitespace-pre-line">
+        {request.notes ?? "Check the delivery fee and distance before issuing: the client saw the price without them."}
+      </AlertDescription>
+    </Alert>
+  ) : null;
   const canOverride = can(user, "quotes.override_blacklist");
 
   // Editable: formal drafts and saved quick estimates.
@@ -42,6 +56,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
           title={q.kind === "quick" ? "Quick quotation" : "Draft quotation"}
           description={q.kind === "quick" ? "Saved estimate. Saving again updates it." : "Drafts save automatically. Issue to give it a number."}
         />
+        {requestBanner}
         <QuoteEditor
           mode={q.kind}
           id={q.id}
@@ -85,6 +100,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
           </span>
         }
       />
+      {requestBanner}
       <QuoteActions
         id={q.id}
         status={q.effective}

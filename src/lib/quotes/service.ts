@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, gte, ilike, inArray, lt, or, sql, type SQL } from "drizzle-orm";
 import { db, type DbOrTx } from "@/db/client";
-import { clients, loyaltyAccounts, quotations, rateCards, user, vehicles, type QuotationRow } from "@/db/schema";
+import { clients, inquiries, loyaltyAccounts, quotations, rateCards, user, vehicles, type QuotationRow } from "@/db/schema";
 import { ActionError, defineAction } from "@/lib/actions";
 import { withAudit } from "@/lib/audit";
 import { can } from "@/lib/permissions";
@@ -13,6 +13,7 @@ import { searchClients } from "@/lib/clients/service";
 import { checkAvailability, type Availability } from "@/lib/bookings/availability";
 import { holidayDates } from "@/lib/rates/service";
 import { getSettings } from "@/lib/settings/service";
+import { maybeSendStaffIntake } from "@/lib/rework/leads";
 import { balanceOf, checkRedeemable, isExpired } from "@/lib/loyalty/ledger";
 import { addDaysToKey, manilaDateKey, manilaToUtc, startOfManilaDay } from "@/lib/time";
 import {
@@ -325,6 +326,8 @@ export const issueQuotation = defineAction({
         .where(eq(user.id, cur.consultantId ?? actor.id));
       const values = {
         ...derivedColumns(form, l, priced),
+        // Drafts from the public booking page have no consultant until someone issues them.
+        consultantId: cur.consultantId ?? actor.id,
         number,
         status: "issued" as const,
         issuedAt: now,
@@ -344,6 +347,14 @@ export const issueQuotation = defineAction({
         { number, total: priced.total, rateCardId: l.card.id, validUntil: validUntil.toISOString(), blacklistOverride: override?.reason ?? null, rewards: redemption },
         tx,
       );
+
+      // A website request whose draft this is: now quoted (Phase 4).
+      await tx
+        .update(inquiries)
+        .set({ status: "quoted", reviewedBy: actor.id, reviewedAt: now })
+        .where(and(eq(inquiries.quotationId, id), eq(inquiries.status, "new")));
+      // Rework lead for a client added in the quotation form (rework.md §2).
+      await maybeSendStaffIntake(tx, id, actor.id);
 
       if (cur.revisedFromId) {
         const [old] = await tx.select().from(quotations).where(eq(quotations.id, cur.revisedFromId)).for("update");

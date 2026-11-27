@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FieldGroup } from "@/components/ui/field";
 import { FUEL_TYPE_LABELS, OWNERSHIP_LABELS, OWNERSHIPS, vehicleSchema, type VehicleInput } from "@/lib/fleet/schema";
-import { BODY_TYPE_LABELS, BODY_TYPES, FUEL_TYPES } from "@/lib/pricing/types";
+import { BODY_CATEGORIES, BODY_TYPE_LABELS, BODY_TYPES, CATEGORY_LABELS, FUEL_TYPES } from "@/lib/pricing/types";
 import { createVehicleAction, updateVehicleAction } from "./actions";
 import type { VehicleItem } from "./fleet-table";
 
@@ -30,6 +30,9 @@ function defaults(vehicle: VehicleItem | undefined, nextSortOrder: number): Vehi
       active: true,
       sortOrder: nextSortOrder,
       bodyType: null,
+      category: null,
+      seats: null,
+      listedPublicly: true,
       fuelType: null,
       year: null,
       tankCapacityL: null,
@@ -48,6 +51,9 @@ function defaults(vehicle: VehicleItem | undefined, nextSortOrder: number): Vehi
     engineNo: vehicle.engineNo ?? "",
     engine: vehicle.engine ?? "",
     bodyType: vehicle.bodyType,
+    category: (vehicle.category as VehicleInput["category"]) ?? null,
+    seats: vehicle.seats,
+    listedPublicly: vehicle.listedPublicly,
     fuelType: vehicle.fuelType,
     tankCapacityL: vehicle.tankCapacityL,
     ownership: vehicle.ownership,
@@ -65,6 +71,8 @@ export function VehicleFormDialog({ open, onOpenChange, vehicle, nextSortOrder =
     defaultValues: defaults(vehicle, nextSortOrder),
   });
   const ownership = useWatch({ control: form.control, name: "ownership" });
+  const bodyType = useWatch({ control: form.control, name: "bodyType" });
+  const categories = bodyType ? BODY_CATEGORIES[bodyType] : [];
 
   async function onSubmit(values: VehicleInput) {
     setError(null);
@@ -105,6 +113,17 @@ export function VehicleFormDialog({ open, onOpenChange, vehicle, nextSortOrder =
               noneLabel="Not set"
               options={BODY_TYPES.map((b) => ({ value: b, label: BODY_TYPE_LABELS[b] }))}
             />
+            {categories.length ? (
+              <SelectField
+                control={form.control}
+                name="category"
+                label="Rate category"
+                noneLabel="Not set"
+                description="Needed to show this car with a price on the booking page."
+                options={categories.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))}
+              />
+            ) : null}
+            <NumberField control={form.control} name="seats" label="Seats" />
             <SelectField
               control={form.control}
               name="fuelType"
@@ -136,6 +155,7 @@ export function VehicleFormDialog({ open, onOpenChange, vehicle, nextSortOrder =
               description="Lower numbers come first on lists and the calendar."
             />
             <SwitchField control={form.control} name="active" label="Active (can be quoted and booked)" />
+            <SwitchField control={form.control} name="listedPublicly" label="Show on the public booking page" />
           </FieldGroup>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

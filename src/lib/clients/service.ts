@@ -86,19 +86,26 @@ async function assertUnique(tx: DbOrTx, input: { phone: string | null; email: st
   }
 }
 
-export const createClient = defineAction({
-  permission: "clients.edit",
-  input: clientSchema,
-  handler: async (actor, input) => {
-    return db.transaction(async (tx) => {
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtext('clients'))`);
-      await assertUnique(tx, input);
-      const [row] = await tx.insert(clients).values({ ...input, source: "manual", createdBy: actor.id }).returning();
-      await withAudit(actor, "client.create", "client", row.id, null, input, tx);
-      return { id: row.id };
-    });
-  },
-});
+function createWithSource(source: "manual" | "quote_form") {
+  return defineAction({
+    permission: "clients.edit",
+    input: clientSchema,
+    handler: async (actor, input) => {
+      return db.transaction(async (tx) => {
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext('clients'))`);
+        await assertUnique(tx, input);
+        const [row] = await tx.insert(clients).values({ ...input, source, createdBy: actor.id }).returning();
+        await withAudit(actor, "client.create", "client", row.id, null, { ...input, source }, tx);
+        return { id: row.id };
+      });
+    },
+  });
+}
+
+export const createClient = createWithSource("manual");
+
+/** Added inline on a quotation form: its first issued quotation sends a Rework lead (rework.md §2). */
+export const createClientFromQuote = createWithSource("quote_form");
 
 export const updateClient = defineAction({
   permission: "clients.edit",

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BODY_TYPES, FUEL_TYPES } from "@/lib/pricing/types";
+import { BODY_CATEGORIES, BODY_TYPES, CATEGORIES, FUEL_TYPES } from "@/lib/pricing/types";
 
 export const OWNERSHIPS = ["owned", "operator", "hired"] as const;
 export const OWNERSHIP_LABELS: Record<(typeof OWNERSHIPS)[number], string> = {
@@ -44,6 +44,11 @@ export const vehicleSchema = z
     engineNo: optText(60),
     engine: optText(60),
     bodyType: z.enum(BODY_TYPES).nullable().default(null),
+    /** Rate-card category (sedan, MPV, SUV). Needed to show the car with a price on the public booking page. */
+    category: z.enum(CATEGORIES).nullable().default(null),
+    seats: optInt(1, 60, "Enter seats between 1 and 60"),
+    /** Shown on the public booking page (when it can be priced). */
+    listedPublicly: z.boolean().default(true),
     fuelType: z.enum(FUEL_TYPES).nullable().default(null),
     tankCapacityL: optInt(1, 500, "Enter litres between 1 and 500"),
     ownership: z.enum(OWNERSHIPS).default("owned"),
@@ -56,6 +61,10 @@ export const vehicleSchema = z
   .refine((v) => v.ownership !== "operator" || !!v.operatorName, {
     path: ["operatorName"],
     message: "Operator name is required for operator-owned vehicles",
+  })
+  .refine((v) => !v.category || (v.bodyType !== null && BODY_CATEGORIES[v.bodyType].includes(v.category)), {
+    path: ["category"],
+    message: "This body type has no such category",
   });
 
 export type VehicleInput = z.input<typeof vehicleSchema>;

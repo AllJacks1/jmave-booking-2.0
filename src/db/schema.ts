@@ -197,6 +197,12 @@ export const vehicles = pgTable(
     operatorName: text("operator_name"),
     /** Centavos; shown on lists only, never used for pricing. */
     dailyRateDisplay: integer("daily_rate_display"),
+    /** Rate-card category for body types that have one (sedan, MPV, SUV). Needed to price the car on the public page. */
+    category: text("category"),
+    /** Seats, if known (shown on the public booking page). */
+    seats: integer("seats"),
+    /** Shown on the public booking page (Phase 4). */
+    listedPublicly: boolean("listed_publicly").notNull().default(true),
     active: boolean("active").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: createdAt(),
@@ -261,9 +267,11 @@ export const clients = pgTable(
     blacklistReason: text("blacklist_reason"),
     /** First BOOKED/COMPLETED rental; null = new client (drives the new-client discount). */
     firstRentalAt: timestamp("first_rental_at", { withTimezone: true }),
-    /** `manual`, `import`, `blacklist_import`. */
+    /** `manual`, `import`, `blacklist_import`, `quote_form` (added inline on a quotation), `website` (public booking page). */
     source: text("source").notNull().default("manual"),
     notes: text("notes"),
+    /** Last time this client was sent to Rework as a lead (rework.md §2). */
+    reworkSentAt: timestamp("rework_sent_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -762,6 +770,64 @@ export const outbox = pgTable(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Phase 4: public booking requests
+// ---------------------------------------------------------------------------
+
+export const INQUIRY_STATUSES = ["new", "quoted", "converted", "rejected"] as const;
+export type InquiryStatus = (typeof INQUIRY_STATUSES)[number];
+export const inquiryStatusEnum = pgEnum("inquiry_status", INQUIRY_STATUSES);
+
+/**
+ * A booking request from the public page. Creates (or links) a client and a
+ * draft formal quotation; never holds a car.
+ */
+export const inquiries = pgTable(
+  "inquiries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** `REQ-2026-0001` (shown to the client on the thank-you screen). */
+    reference: text("reference").notNull().unique(),
+    status: inquiryStatusEnum("status").notNull().default("new"),
+    service: serviceEnum("service").notNull(),
+    vehicleId: uuid("vehicle_id").references(() => vehicles.id, { onDelete: "set null" }),
+    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+    /** The public form as submitted (`src/lib/public/schema.ts`). */
+    payload: jsonb("payload").notNull(),
+    /** Attribution: UTM, click ids, referrer, `_fbp`. */
+    utm: jsonb("utm").notNull().default({}),
+    /** Request facts kept for staff: IP and user agent. */
+    meta: jsonb("meta").notNull().default({}),
+    /** System notes for staff (e.g. "email already used by another client"). */
+    notes: text("notes"),
+    clientId: uuid("client_id").references(() => clients.id, { onDelete: "restrict" }),
+    quotationId: uuid("quotation_id")
+      .unique()
+      .references(() => quotations.id, { onDelete: "set null" }),
+    /** Price shown on the public page (centavos), for staff comparison. */
+    shownTotalCentavos: integer("shown_total_centavos"),
+    rejectReason: text("reject_reason"),
+    reviewedBy: uuid("reviewed_by").references(() => user.id, { onDelete: "set null" }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("inquiries_status_idx").on(t.status, t.createdAt), index("inquiries_client_idx").on(t.clientId)],
+);
+
+/** Public submissions per hashed IP (rate limit, 5 per hour). Old rows are pruned on insert. */
+export const publicRateEvents = pgTable(
+  "public_rate_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** `inquiry:<sha256(ip + secret)>`. */
+    key: text("key").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("public_rate_events_key_at_idx").on(t.key, t.at)],
+);
+
 export type UserRow = typeof user.$inferSelect;
 export type QuotationRow = typeof quotations.$inferSelect;
 export type AuditLogRow = typeof auditLog.$inferSelect;
@@ -782,3 +848,4 @@ export type ShiftAssignmentRow = typeof shiftAssignments.$inferSelect;
 export type LoyaltyAccountRow = typeof loyaltyAccounts.$inferSelect;
 export type PointsLedgerRow = typeof pointsLedger.$inferSelect;
 export type OutboxRow = typeof outbox.$inferSelect;
+export type InquiryRow = typeof inquiries.$inferSelect;

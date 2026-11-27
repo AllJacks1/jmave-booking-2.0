@@ -34,6 +34,11 @@ export default defineConfig({
       BETTER_AUTH_SECRET: "e2e-only-secret-0123456789abcdef0123456789abcdef",
       APP_URL: BASE_URL,
       NODE_ENV: "production",
+      // Phase 4. Cloudflare's published Turnstile test keys (always pass); not secrets.
+      TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
+      TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+      PUBLIC_EMBED_ORIGINS: "http://127.0.0.1:3199",
+      PUBLIC_BOOK_HOST: "book.e2e.test",
     },
   },
 });

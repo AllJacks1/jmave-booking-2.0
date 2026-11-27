@@ -19,6 +19,8 @@ const N = false;
 const EXPECTED: Record<Action, [boolean, boolean, boolean, boolean]> = {
   "quotes.manage": [Y, Y, Y, N],
   "quotes.override_blacklist": [Y, Y, N, N],
+  "inquiries.manage": [Y, Y, Y, N],
+  "rework.send": [Y, Y, Y, N],
   "clients.view": [Y, Y, Y, N],
   "clients.edit": [Y, Y, Y, N],
   "clients.blacklist": [Y, Y, N, N],

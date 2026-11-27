@@ -24,6 +24,7 @@ import { BlacklistBadge, RepeatBadge } from "../client-badges";
 import { LoyaltySummary } from "@/components/rewards/loyalty-summary";
 import { accountForClient } from "@/lib/loyalty/service";
 import { BlacklistControl } from "./blacklist-control";
+import { SendToRework } from "./send-to-rework";
 
 export const metadata: Metadata = { title: "Client" };
 
@@ -31,6 +32,8 @@ const SOURCE_LABELS: Record<string, string> = {
   manual: "Added in the app",
   import: "Imported from the rental logs",
   blacklist_import: "Imported from the DMS blacklist",
+  quote_form: "Added on a quotation",
+  website: "Public booking page",
 };
 
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
@@ -58,6 +61,9 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         }
         actions={
           <>
+            {can(user, "rework.send") ? (
+              <SendToRework id={c.id} sentAt={c.reworkSentAt ? formatManilaDateTime(c.reworkSentAt) : null} />
+            ) : null}
             {can(user, "clients.blacklist") ? (
               <BlacklistControl id={c.id} name={c.fullName} blacklisted={c.isBlacklisted} reason={c.blacklistReason} />
             ) : null}

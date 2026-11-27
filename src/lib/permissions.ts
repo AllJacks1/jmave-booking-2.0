@@ -24,6 +24,10 @@ export const PERMISSIONS = {
   "quotes.manage": SALES_UP,
   // Issue a quotation for a blacklisted client (with a reason): Admin and up (Phase 1c brief)
   "quotes.override_blacklist": ADMIN_UP,
+  // Public booking requests inbox: review, reject (Phase 4 brief §5: Sales+)
+  "inquiries.manage": SALES_UP,
+  // Manual "Send to Rework" on a client (rework.md §2: Sales+)
+  "rework.send": SALES_UP,
   // Clients: view, create, edit
   "clients.view": SALES_UP,
   "clients.edit": SALES_UP,
